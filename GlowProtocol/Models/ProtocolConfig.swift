@@ -81,6 +81,16 @@ final class ProtocolConfig {
     var customHabit2: String?
     var customHabit3: String?
 
+    // Custom habit icon overrides (SF Symbol names; nil = "star.fill")
+    var customHabit1Icon: String?
+    var customHabit2Icon: String?
+    var customHabit3Icon: String?
+
+    // Custom habit color overrides (light-mode pastel hex; nil = "#E0E0E0")
+    var customHabit1ColorHex: String?
+    var customHabit2ColorHex: String?
+    var customHabit3ColorHex: String?
+
     init() {
         self.difficultyPresetRaw = DifficultyPreset.hard.rawValue
         self.graceDaysPerMonth = 0
@@ -103,6 +113,12 @@ final class ProtocolConfig {
         self.customHabit1 = nil
         self.customHabit2 = nil
         self.customHabit3 = nil
+        self.customHabit1Icon = nil
+        self.customHabit2Icon = nil
+        self.customHabit3Icon = nil
+        self.customHabit1ColorHex = nil
+        self.customHabit2ColorHex = nil
+        self.customHabit3ColorHex = nil
     }
 
     var difficultyPreset: DifficultyPreset {

@@ -2,7 +2,7 @@
 //  HabitCustomizerView.swift
 //  GlowProtocol
 //
-//  Step 3 — toggle the default habits + optional custom inputs.
+//  Step 3 — toggle the default habits + custom habit builder rows with icon/color picker.
 //
 
 import SwiftUI
@@ -11,6 +11,8 @@ struct HabitCustomizerView: View {
     @Bindable var viewModel: OnboardingViewModel
     let onBack: () -> Void
     let onConfirm: () -> Void
+
+    @State private var iconPickerTarget: IconPickerSlot? = nil
 
     var body: some View {
         ZStack {
@@ -38,9 +40,24 @@ struct HabitCustomizerView: View {
                             .padding(.top, GlowSpacing.s24)
 
                         VStack(spacing: GlowSpacing.s8) {
-                            customField(text: $viewModel.custom1)
-                            customField(text: $viewModel.custom2)
-                            customField(text: $viewModel.custom3)
+                            customHabitBuilderRow(
+                                text: $viewModel.custom1,
+                                icon: $viewModel.customIcon1,
+                                colorHex: $viewModel.customColor1,
+                                slot: 1
+                            )
+                            customHabitBuilderRow(
+                                text: $viewModel.custom2,
+                                icon: $viewModel.customIcon2,
+                                colorHex: $viewModel.customColor2,
+                                slot: 2
+                            )
+                            customHabitBuilderRow(
+                                text: $viewModel.custom3,
+                                icon: $viewModel.customIcon3,
+                                colorHex: $viewModel.customColor3,
+                                slot: 3
+                            )
                         }
 
                         if !viewModel.canContinueFromHabits {
@@ -63,7 +80,103 @@ struct HabitCustomizerView: View {
                 .padding(.bottom, GlowSpacing.s24)
             }
         }
+        .sheet(item: $iconPickerTarget) { target in
+            iconPickerSheet(for: target)
+        }
     }
+
+    // MARK: - Icon picker sheet builder
+
+    @ViewBuilder
+    private func iconPickerSheet(for target: IconPickerSlot) -> some View {
+        switch target.id {
+        case 1:
+            CustomHabitIconPickerSheet(
+                selectedSymbol: $viewModel.customIcon1,
+                selectedColorHex: $viewModel.customColor1
+            ) { iconPickerTarget = nil }
+        case 2:
+            CustomHabitIconPickerSheet(
+                selectedSymbol: $viewModel.customIcon2,
+                selectedColorHex: $viewModel.customColor2
+            ) { iconPickerTarget = nil }
+        default:
+            CustomHabitIconPickerSheet(
+                selectedSymbol: $viewModel.customIcon3,
+                selectedColorHex: $viewModel.customColor3
+            ) { iconPickerTarget = nil }
+        }
+    }
+
+    // MARK: - Custom habit builder row
+
+    private func customHabitBuilderRow(
+        text: Binding<String>,
+        icon: Binding<String>,
+        colorHex: Binding<String>,
+        slot: Int
+    ) -> some View {
+        HStack(spacing: 14) {
+            // Icon circle
+            let hasText = !text.wrappedValue.isEmpty
+            Button {
+                if hasText {
+                    iconPickerTarget = IconPickerSlot(id: slot)
+                }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(hasText ? Color(hex: colorHex.wrappedValue) : Color.glowSurfaceSecondary)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: hasText ? icon.wrappedValue : "plus.circle.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(hasText ? Color.glowTextPrimary : Color.glowTextDisabled)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasText)
+            .animation(.spring(response: 0.3, dampingFraction: 0.72), value: hasText)
+
+            // Text field
+            TextField("Custom habit (optional)", text: text)
+                .glowText(.body)
+                .foregroundStyle(Color.glowTextPrimary)
+                .submitLabel(.done)
+                .onChange(of: text.wrappedValue) { _, newValue in
+                    if newValue.count > 40 {
+                        text.wrappedValue = String(newValue.prefix(40))
+                    }
+                    // Reset icon/color to defaults when field is cleared
+                    if newValue.isEmpty {
+                        icon.wrappedValue = "star.fill"
+                        colorHex.wrappedValue = "#E0E0E0"
+                    }
+                }
+
+            // Counter / clear
+            if !text.wrappedValue.isEmpty {
+                Text("\(text.wrappedValue.count) / 40")
+                    .glowText(.caption)
+                    .foregroundStyle(Color.glowTextSecondary)
+                Button {
+                    text.wrappedValue = ""
+                    icon.wrappedValue = "star.fill"
+                    colorHex.wrappedValue = "#E0E0E0"
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color.glowTextSecondary)
+                }
+            }
+        }
+        .padding(.horizontal, GlowSpacing.s16)
+        .frame(minHeight: 72)
+        .background(
+            RoundedRectangle(cornerRadius: GlowRadius.medium, style: .continuous)
+                .fill(Color.glowSurfaceSecondary)
+        )
+    }
+
+    // MARK: - Default habits card
 
     private var navBar: some View {
         HStack {
@@ -169,38 +282,10 @@ struct HabitCustomizerView: View {
         .padding(.horizontal, GlowSpacing.s16)
         .frame(minHeight: 72)
     }
+}
 
-    private func customField(text: Binding<String>) -> some View {
-        HStack {
-            TextField("Custom habit (optional)", text: text)
-                .glowText(.body)
-                .foregroundStyle(Color.glowTextPrimary)
-                .submitLabel(.done)
-                .onChange(of: text.wrappedValue) { _, newValue in
-                    if newValue.count > 40 {
-                        text.wrappedValue = String(newValue.prefix(40))
-                    }
-                }
-            if !text.wrappedValue.isEmpty {
-                Text("\(text.wrappedValue.count) / 40")
-                    .glowText(.caption)
-                    .foregroundStyle(Color.glowTextSecondary)
-                Button {
-                    text.wrappedValue = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(Color.glowTextSecondary)
-                }
-            } else {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundStyle(Color.glowTextSecondary)
-            }
-        }
-        .padding(.horizontal, GlowSpacing.s16)
-        .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: GlowRadius.medium, style: .continuous)
-                .fill(Color.glowSurfaceSecondary)
-        )
-    }
+// MARK: - Supporting type
+
+struct IconPickerSlot: Identifiable {
+    let id: Int
 }

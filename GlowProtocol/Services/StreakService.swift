@@ -39,25 +39,37 @@ final class StreakService {
 
     // MARK: - Habit seeding
 
-    /// Returns the list of HabitID + label pairs that should be seeded for a day, given the config.
-    func enabledHabits(for config: ProtocolConfig) -> [(HabitID, String?)] {
-        var items: [(HabitID, String?)] = []
+    /// Returns the list of (habitID, customLabel, customSymbol, customColorHex) tuples to seed for a day.
+    func enabledHabits(for config: ProtocolConfig) -> [(HabitID, String?, String?, String?)] {
+        var items: [(HabitID, String?, String?, String?)] = []
 
         if config.workoutEnabled {
-            items.append((.workout1, nil))
+            items.append((.workout1, nil, nil, nil))
             if config.workoutCountPerDay >= 2 {
-                items.append((.workout2, nil))
+                items.append((.workout2, nil, nil, nil))
             }
         }
-        if config.waterEnabled { items.append((.water, nil)) }
-        if config.dietEnabled { items.append((.diet, nil)) }
-        if config.readingEnabled { items.append((.reading, nil)) }
-        if config.stepsEnabled { items.append((.steps, nil)) }
-        if config.noAlcoholEnabled { items.append((.noAlcohol, nil)) }
-        if config.progressPhotoEnabled { items.append((.progressPhoto, nil)) }
-        if let c = config.customHabit1, !c.isEmpty { items.append((.custom1, c)) }
-        if let c = config.customHabit2, !c.isEmpty { items.append((.custom2, c)) }
-        if let c = config.customHabit3, !c.isEmpty { items.append((.custom3, c)) }
+        if config.waterEnabled { items.append((.water, nil, nil, nil)) }
+        if config.dietEnabled { items.append((.diet, nil, nil, nil)) }
+        if config.readingEnabled { items.append((.reading, nil, nil, nil)) }
+        if config.stepsEnabled { items.append((.steps, nil, nil, nil)) }
+        if config.noAlcoholEnabled { items.append((.noAlcohol, nil, nil, nil)) }
+        if config.progressPhotoEnabled { items.append((.progressPhoto, nil, nil, nil)) }
+        if let c = config.customHabit1, !c.isEmpty {
+            items.append((.custom1, c,
+                config.customHabit1Icon ?? "star.fill",
+                config.customHabit1ColorHex ?? "#E0E0E0"))
+        }
+        if let c = config.customHabit2, !c.isEmpty {
+            items.append((.custom2, c,
+                config.customHabit2Icon ?? "star.fill",
+                config.customHabit2ColorHex ?? "#E0E0E0"))
+        }
+        if let c = config.customHabit3, !c.isEmpty {
+            items.append((.custom3, c,
+                config.customHabit3Icon ?? "star.fill",
+                config.customHabit3ColorHex ?? "#E0E0E0"))
+        }
 
         return items
     }
@@ -117,10 +129,12 @@ final class StreakService {
             runID: runID,
             isCurrentRun: true
         )
-        for (habitID, custom) in enabledHabits(for: config) {
+        for (habitID, label, symbol, colorHex) in enabledHabits(for: config) {
             let entry = HabitEntry(
                 habitID: habitID,
-                customLabel: custom,
+                customLabel: label,
+                customSymbolName: symbol,
+                customColorHex: colorHex,
                 isRequired: true
             )
             entry.dayLog = log
@@ -251,14 +265,45 @@ final class StreakService {
         }
         let startOfDay = date.glowStartOfDay
         let log = DayLog(date: startOfDay, dayNumber: 1, runID: runID, isCurrentRun: true)
-        for (habitID, custom) in enabledHabits(for: config) {
-            let entry = HabitEntry(habitID: habitID, customLabel: custom, isRequired: true)
+        for (habitID, label, symbol, colorHex) in enabledHabits(for: config) {
+            let entry = HabitEntry(
+                habitID: habitID,
+                customLabel: label,
+                customSymbolName: symbol,
+                customColorHex: colorHex,
+                isRequired: true
+            )
             entry.dayLog = log
             log.habitEntries.append(entry)
             context.insert(entry)
         }
         context.insert(log)
         return log
+    }
+
+    /// Syncs today's existing DayLog to match the current config.
+    /// Adds any newly-enabled habit entries that aren't already in the log.
+    /// Never removes entries — completed history is always preserved.
+    func resyncTodayHabits(config: ProtocolConfig) {
+        let today = Date.now.glowStartOfDay
+        guard let log = fetchDayLog(on: today) else { return }
+
+        let existingIDs = Set(log.habitEntries.map { $0.habitID })
+
+        for (habitID, label, symbol, colorHex) in enabledHabits(for: config) {
+            guard !existingIDs.contains(habitID) else { continue }
+            let entry = HabitEntry(
+                habitID: habitID,
+                customLabel: label,
+                customSymbolName: symbol,
+                customColorHex: colorHex,
+                isRequired: true
+            )
+            entry.dayLog = log
+            log.habitEntries.append(entry)
+            context.insert(entry)
+        }
+        try? context.save()
     }
 
     func clearPendingDecision() {
@@ -343,22 +388,25 @@ final class StreakService {
     }
 
     /// Per-habit completion percentage across the current run.
-    func habitCompletionRates() -> [(HabitID, Double, String?)] {
+    /// Returns (habitID, rate, customLabel, customSymbolName, customColorHex).
+    func habitCompletionRates() -> [(HabitID, Double, String?, String?, String?)] {
         let logs = fetchAllCurrentRunLogs()
-        var totals: [HabitID: (complete: Int, total: Int, label: String?)] = [:]
+        var totals: [HabitID: (complete: Int, total: Int, label: String?, symbol: String?, colorHex: String?)] = [:]
         for log in logs {
             for entry in log.habitEntries {
                 let id = entry.habitID
-                var bucket = totals[id] ?? (0, 0, entry.customLabel)
+                var bucket = totals[id] ?? (0, 0, entry.customLabel, entry.customSymbolName, entry.customColorHex)
                 bucket.total += 1
                 if entry.isComplete { bucket.complete += 1 }
                 if bucket.label == nil { bucket.label = entry.customLabel }
+                if bucket.symbol == nil { bucket.symbol = entry.customSymbolName }
+                if bucket.colorHex == nil { bucket.colorHex = entry.customColorHex }
                 totals[id] = bucket
             }
         }
-        return totals.compactMap { (id, value) -> (HabitID, Double, String?)? in
+        return totals.compactMap { (id, value) -> (HabitID, Double, String?, String?, String?)? in
             guard value.total > 0 else { return nil }
-            return (id, Double(value.complete) / Double(value.total), value.label)
+            return (id, Double(value.complete) / Double(value.total), value.label, value.symbol, value.colorHex)
         }.sorted { lhs, rhs in
             let order = HabitID.displayOrder
             let li = order.firstIndex(of: lhs.0) ?? Int.max

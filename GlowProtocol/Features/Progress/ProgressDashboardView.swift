@@ -137,19 +137,27 @@ struct ProgressDashboardView: View {
             sectionLabel("HABIT COMPLETION")
             VStack(spacing: GlowSpacing.s12) {
                 ForEach(Array(viewModel.habitRates.enumerated()), id: \.offset) { idx, item in
-                    let (id, rate, label) = item
-                    habitBar(id: id, rate: rate, label: label ?? id.defaultLabel)
-                        .padding(.vertical, 2)
+                    let (id, rate, label, symbol, colorHex) = item
+                    let effectiveSymbol = symbol ?? id.symbolName
+                    let effectivePastel = colorHex.map { Color(hex: $0) } ?? id.pastel
+                    habitBar(
+                        id: id,
+                        rate: rate,
+                        label: label ?? id.defaultLabel,
+                        symbol: effectiveSymbol,
+                        pastel: effectivePastel
+                    )
+                    .padding(.vertical, 2)
                 }
             }
         }
     }
 
-    private func habitBar(id: HabitID, rate: Double, label: String) -> some View {
+    private func habitBar(id: HabitID, rate: Double, label: String, symbol: String, pastel: Color) -> some View {
         HStack(spacing: 12) {
             ZStack {
-                Circle().fill(id.pastel).frame(width: 28, height: 28)
-                Image(systemName: id.symbolName)
+                Circle().fill(pastel).frame(width: 28, height: 28)
+                Image(systemName: symbol)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.glowTextPrimary)
             }
@@ -160,7 +168,7 @@ struct ProgressDashboardView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.glowSurfaceSecondary).frame(height: 6)
-                    Capsule().fill(id.pastel)
+                    Capsule().fill(pastel)
                         .frame(width: max(8, geo.size.width * rate), height: 6)
                 }
             }

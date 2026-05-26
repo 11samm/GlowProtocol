@@ -17,7 +17,7 @@ final class GlowProgressViewModel {
     var archivedRuns: [ArchivedRun] = []
     var currentStreak: Int = 0
     var personalBest: Int = 0
-    var habitRates: [(HabitID, Double, String?)] = []
+    var habitRates: [(HabitID, Double, String?, String?, String?)] = []
 
     private var context: ModelContext?
     private var service: StreakService?

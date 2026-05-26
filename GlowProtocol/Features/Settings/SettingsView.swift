@@ -337,6 +337,8 @@ struct EditHabitsSheet: View {
     @Bindable var viewModel: SettingsViewModel
     @Environment(\.dismiss) private var dismiss
 
+    @State private var iconPickerTarget: IconPickerSlot? = nil
+
     var body: some View {
         VStack(alignment: .leading, spacing: GlowSpacing.s16) {
             GlowSheetHandle()
@@ -347,18 +349,65 @@ struct EditHabitsSheet: View {
 
             if let cfg = viewModel.config {
                 ScrollView {
-                    VStack(spacing: GlowSpacing.s8) {
-                        habitRow(title: "Workout", on: bind(\.workoutEnabled, on: cfg))
-                        habitRow(title: "Water", on: bind(\.waterEnabled, on: cfg))
-                        habitRow(title: "Diet", on: bind(\.dietEnabled, on: cfg))
-                        habitRow(title: "Reading", on: bind(\.readingEnabled, on: cfg))
-                        habitRow(title: "Steps", on: bind(\.stepsEnabled, on: cfg))
-                        habitRow(title: "No alcohol", on: bind(\.noAlcoholEnabled, on: cfg))
-                        habitRow(title: "Progress photo", on: bind(\.progressPhotoEnabled, on: cfg))
+                    VStack(alignment: .leading, spacing: GlowSpacing.s16) {
+                        VStack(spacing: GlowSpacing.s8) {
+                            habitToggleRow(title: "Workout", on: bind(\.workoutEnabled, on: cfg))
+                            habitToggleRow(title: "Water", on: bind(\.waterEnabled, on: cfg))
+                            habitToggleRow(title: "Diet", on: bind(\.dietEnabled, on: cfg))
+                            habitToggleRow(title: "Reading", on: bind(\.readingEnabled, on: cfg))
+                            habitToggleRow(title: "Steps", on: bind(\.stepsEnabled, on: cfg))
+                            habitToggleRow(title: "No alcohol", on: bind(\.noAlcoholEnabled, on: cfg))
+                            habitToggleRow(title: "Progress photo", on: bind(\.progressPhotoEnabled, on: cfg))
+                        }
+
+                        Text("CUSTOM HABITS")
+                            .glowText(.badge)
+                            .foregroundStyle(Color.glowTextSecondary)
+                            .tracking(1)
+                            .padding(.top, GlowSpacing.s8)
+
+                        VStack(spacing: GlowSpacing.s8) {
+                            customHabitRow(
+                                textBinding: Binding(
+                                    get: { cfg.customHabit1 ?? "" },
+                                    set: { cfg.customHabit1 = $0.isEmpty ? nil : $0 }
+                                ),
+                                icon: $viewModel.draftCustomIcon1,
+                                colorHex: $viewModel.draftCustomColor1,
+                                slot: 1
+                            )
+                            customHabitRow(
+                                textBinding: Binding(
+                                    get: { cfg.customHabit2 ?? "" },
+                                    set: { cfg.customHabit2 = $0.isEmpty ? nil : $0 }
+                                ),
+                                icon: $viewModel.draftCustomIcon2,
+                                colorHex: $viewModel.draftCustomColor2,
+                                slot: 2
+                            )
+                            customHabitRow(
+                                textBinding: Binding(
+                                    get: { cfg.customHabit3 ?? "" },
+                                    set: { cfg.customHabit3 = $0.isEmpty ? nil : $0 }
+                                ),
+                                icon: $viewModel.draftCustomIcon3,
+                                colorHex: $viewModel.draftCustomColor3,
+                                slot: 3
+                            )
+                        }
                     }
                 }
             }
+
             GlowButton(title: "Save") {
+                if let cfg = viewModel.config {
+                    cfg.customHabit1Icon     = viewModel.draftCustomIcon1
+                    cfg.customHabit2Icon     = viewModel.draftCustomIcon2
+                    cfg.customHabit3Icon     = viewModel.draftCustomIcon3
+                    cfg.customHabit1ColorHex = viewModel.draftCustomColor1
+                    cfg.customHabit2ColorHex = viewModel.draftCustomColor2
+                    cfg.customHabit3ColorHex = viewModel.draftCustomColor3
+                }
                 viewModel.save()
                 dismiss()
             }
@@ -366,6 +415,102 @@ struct EditHabitsSheet: View {
         .padding(.horizontal, GlowSpacing.s24)
         .padding(.bottom, GlowSpacing.s24)
         .background(Color.glowBackground.ignoresSafeArea())
+        .onAppear {
+            viewModel.draftCustomIcon1 = viewModel.config?.customHabit1Icon ?? "star.fill"
+            viewModel.draftCustomIcon2 = viewModel.config?.customHabit2Icon ?? "star.fill"
+            viewModel.draftCustomIcon3 = viewModel.config?.customHabit3Icon ?? "star.fill"
+            viewModel.draftCustomColor1 = viewModel.config?.customHabit1ColorHex ?? "#E0E0E0"
+            viewModel.draftCustomColor2 = viewModel.config?.customHabit2ColorHex ?? "#E0E0E0"
+            viewModel.draftCustomColor3 = viewModel.config?.customHabit3ColorHex ?? "#E0E0E0"
+        }
+        .sheet(item: $iconPickerTarget) { target in
+            iconPickerSheet(for: target)
+        }
+    }
+
+    // MARK: - Icon picker sheet builder
+
+    @ViewBuilder
+    private func iconPickerSheet(for target: IconPickerSlot) -> some View {
+        switch target.id {
+        case 1:
+            CustomHabitIconPickerSheet(
+                selectedSymbol: $viewModel.draftCustomIcon1,
+                selectedColorHex: $viewModel.draftCustomColor1
+            ) { iconPickerTarget = nil }
+        case 2:
+            CustomHabitIconPickerSheet(
+                selectedSymbol: $viewModel.draftCustomIcon2,
+                selectedColorHex: $viewModel.draftCustomColor2
+            ) { iconPickerTarget = nil }
+        default:
+            CustomHabitIconPickerSheet(
+                selectedSymbol: $viewModel.draftCustomIcon3,
+                selectedColorHex: $viewModel.draftCustomColor3
+            ) { iconPickerTarget = nil }
+        }
+    }
+
+    // MARK: - Custom habit row (icon circle + text field + counter/clear)
+
+    private func customHabitRow(
+        textBinding: Binding<String>,
+        icon: Binding<String>,
+        colorHex: Binding<String>,
+        slot: Int
+    ) -> some View {
+        HStack(spacing: 14) {
+            let hasText = !textBinding.wrappedValue.isEmpty
+            Button {
+                if hasText { iconPickerTarget = IconPickerSlot(id: slot) }
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(hasText ? Color(hex: colorHex.wrappedValue) : Color.glowSurfaceSecondary)
+                        .frame(width: 36, height: 36)
+                    Image(systemName: hasText ? icon.wrappedValue : "plus.circle.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(hasText ? Color.glowTextPrimary : Color.glowTextDisabled)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasText)
+            .animation(.spring(response: 0.3, dampingFraction: 0.72), value: hasText)
+
+            TextField("Custom habit (optional)", text: textBinding)
+                .glowText(.body)
+                .foregroundStyle(Color.glowTextPrimary)
+                .submitLabel(.done)
+                .onChange(of: textBinding.wrappedValue) { _, newValue in
+                    if newValue.count > 40 {
+                        textBinding.wrappedValue = String(newValue.prefix(40))
+                    }
+                    if newValue.isEmpty {
+                        icon.wrappedValue = "star.fill"
+                        colorHex.wrappedValue = "#E0E0E0"
+                    }
+                }
+
+            if !textBinding.wrappedValue.isEmpty {
+                Text("\(textBinding.wrappedValue.count) / 40")
+                    .glowText(.caption)
+                    .foregroundStyle(Color.glowTextSecondary)
+                Button {
+                    textBinding.wrappedValue = ""
+                    icon.wrappedValue = "star.fill"
+                    colorHex.wrappedValue = "#E0E0E0"
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color.glowTextSecondary)
+                }
+            }
+        }
+        .padding(.horizontal, GlowSpacing.s16)
+        .frame(minHeight: 72)
+        .background(
+            RoundedRectangle(cornerRadius: GlowRadius.medium, style: .continuous)
+                .fill(Color.glowSurfaceSecondary)
+        )
     }
 
     private func bind(_ keyPath: ReferenceWritableKeyPath<ProtocolConfig, Bool>, on cfg: ProtocolConfig) -> Binding<Bool> {
@@ -375,7 +520,7 @@ struct EditHabitsSheet: View {
         )
     }
 
-    private func habitRow(title: String, on: Binding<Bool>) -> some View {
+    private func habitToggleRow(title: String, on: Binding<Bool>) -> some View {
         HStack {
             Text(title)
                 .glowText(.body)

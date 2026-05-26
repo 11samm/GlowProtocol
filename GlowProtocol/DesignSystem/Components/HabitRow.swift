@@ -15,6 +15,8 @@ struct HabitRow: View {
     let statusEmphasis: StatusEmphasis
     var trailing: TrailingStyle = .check
     var photoThumbnail: UIImage? = nil
+    var iconSymbolOverride: String? = nil
+    var iconColorOverride: Color? = nil
     var onTap: () -> Void
 
     enum StatusEmphasis {
@@ -61,6 +63,10 @@ struct HabitRow: View {
         .buttonStyle(.plain)
     }
 
+    private var effectivePastel: Color {
+        iconColorOverride ?? habitID.pastel
+    }
+
     @ViewBuilder private var iconView: some View {
         if habitID == .progressPhoto, let thumb = photoThumbnail {
             Image(uiImage: thumb)
@@ -69,11 +75,12 @@ struct HabitRow: View {
                 .frame(width: 36, height: 36)
                 .clipShape(Circle())
         } else {
+            let effectiveSymbol = iconSymbolOverride ?? habitID.symbolName
             ZStack {
                 Circle()
-                    .fill(habitID.pastel)
+                    .fill(effectivePastel)
                     .frame(width: 36, height: 36)
-                Image(systemName: habitID.symbolName)
+                Image(systemName: effectiveSymbol)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(Color.glowTextPrimary)
             }
@@ -83,9 +90,9 @@ struct HabitRow: View {
     @ViewBuilder private var trailingView: some View {
         switch trailing {
         case .check:
-            CheckmarkView(isComplete: isComplete, size: 28, pastel: habitID.pastel)
+            CheckmarkView(isComplete: isComplete, size: 28, pastel: effectivePastel)
         case .segmented(let filled, let total):
-            SegmentedRing(filled: filled, total: total, pastel: habitID.pastel, isComplete: isComplete)
+            SegmentedRing(filled: filled, total: total, pastel: effectivePastel, isComplete: isComplete)
                 .frame(width: 28, height: 28)
         }
     }

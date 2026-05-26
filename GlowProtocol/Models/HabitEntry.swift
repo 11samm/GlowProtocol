@@ -94,12 +94,21 @@ enum HabitID: String, Codable, CaseIterable {
         default: return false
         }
     }
+
+    var isCustom: Bool {
+        switch self {
+        case .custom1, .custom2, .custom3: return true
+        default: return false
+        }
+    }
 }
 
 @Model
 final class HabitEntry {
     var habitIDRaw: String
     var customLabel: String?
+    var customSymbolName: String?   // non-nil only when habitID == .custom1/2/3
+    var customColorHex: String?     // non-nil only when habitID == .custom1/2/3
     var isRequired: Bool
     var isComplete: Bool
     var completedAt: Date?
@@ -110,6 +119,8 @@ final class HabitEntry {
     init(
         habitID: HabitID,
         customLabel: String? = nil,
+        customSymbolName: String? = nil,
+        customColorHex: String? = nil,
         isRequired: Bool = true,
         isComplete: Bool = false,
         completedAt: Date? = nil,
@@ -117,6 +128,8 @@ final class HabitEntry {
     ) {
         self.habitIDRaw = habitID.rawValue
         self.customLabel = customLabel
+        self.customSymbolName = customSymbolName
+        self.customColorHex = customColorHex
         self.isRequired = isRequired
         self.isComplete = isComplete
         self.completedAt = completedAt

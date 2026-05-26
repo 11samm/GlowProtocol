@@ -12,7 +12,6 @@ struct DailyGlowView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel = DailyGlowViewModel()
-    @State private var stepsConfirmEntry: HabitEntry?
     @State private var undoEntry: HabitEntry?
     @State private var sheetState: SheetState?
 
@@ -78,19 +77,6 @@ struct DailyGlowView: View {
                 PhotoCaptureView(entry: entry, dayLog: log, viewModel: viewModel)
             }
         }
-        .confirmationDialog(
-            "Did you hit your step goal today?",
-            isPresented: Binding(get: { stepsConfirmEntry != nil },
-                                 set: { if !$0 { stepsConfirmEntry = nil } })
-        ) {
-            Button("Yes — log it") {
-                if let entry = stepsConfirmEntry {
-                    viewModel.completeHabit(entry, metadata: #"{"confirmed":true}"#)
-                }
-                stepsConfirmEntry = nil
-            }
-            Button("Not yet", role: .cancel) { stepsConfirmEntry = nil }
-        }
         .sheet(item: $undoEntry) { entry in
             undoSheet(entry: entry)
                 .presentationDetents([.height(220)])
@@ -152,6 +138,10 @@ struct DailyGlowView: View {
                     statusEmphasis: emphasis,
                     trailing: viewModel.trailingStyle(for: entry),
                     photoThumbnail: photoThumbnail(for: entry, log: log),
+                    iconSymbolOverride: entry.habitID.isCustom ? entry.customSymbolName : nil,
+                    iconColorOverride: entry.habitID.isCustom
+                        ? entry.customColorHex.map { Color(hex: $0) }
+                        : nil,
                     onTap: { handleRowTap(entry, log: log) }
                 )
                 .transition(.glowMove)
@@ -185,7 +175,7 @@ struct DailyGlowView: View {
         case .progressPhoto:
             sheetState = .photo(entry, log)
         case .steps:
-            stepsConfirmEntry = entry
+            viewModel.completeHabit(entry, metadata: #"{"confirmed":true}"#)
         default:
             viewModel.completeHabit(entry)
         }

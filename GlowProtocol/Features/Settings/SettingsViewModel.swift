@@ -14,6 +14,14 @@ final class SettingsViewModel {
     private var context: ModelContext?
     private var service: StreakService?
 
+    // Draft icon/color for EditHabitsSheet — populated on sheet appear, written on Save
+    var draftCustomIcon1: String = "star.fill"
+    var draftCustomIcon2: String = "star.fill"
+    var draftCustomIcon3: String = "star.fill"
+    var draftCustomColor1: String = "#E0E0E0"
+    var draftCustomColor2: String = "#E0E0E0"
+    var draftCustomColor3: String = "#E0E0E0"
+
     func bind(context: ModelContext) {
         self.context = context
         service = StreakService(context: context)
@@ -21,7 +29,11 @@ final class SettingsViewModel {
     }
 
     func save() {
+        // Persist config changes first, then sync today's habit entries to match.
         try? context?.save()
+        if let cfg = config {
+            service?.resyncTodayHabits(config: cfg)
+        }
     }
 
     func resetProtocol() {

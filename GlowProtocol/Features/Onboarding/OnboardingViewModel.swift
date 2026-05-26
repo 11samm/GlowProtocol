@@ -31,6 +31,13 @@ final class OnboardingViewModel {
     var custom2: String = ""
     var custom3: String = ""
 
+    var customIcon1: String = "star.fill"
+    var customIcon2: String = "star.fill"
+    var customIcon3: String = "star.fill"
+    var customColor1: String = "#E0E0E0"
+    var customColor2: String = "#E0E0E0"
+    var customColor3: String = "#E0E0E0"
+
     enum Step: Int, CaseIterable {
         case welcome
         case difficulty
@@ -106,6 +113,13 @@ final class OnboardingViewModel {
         config.customHabit1 = custom1.trimmingCharacters(in: .whitespaces).nilIfEmpty
         config.customHabit2 = custom2.trimmingCharacters(in: .whitespaces).nilIfEmpty
         config.customHabit3 = custom3.trimmingCharacters(in: .whitespaces).nilIfEmpty
+
+        config.customHabit1Icon     = customIcon1
+        config.customHabit2Icon     = customIcon2
+        config.customHabit3Icon     = customIcon3
+        config.customHabit1ColorHex = customColor1
+        config.customHabit2ColorHex = customColor2
+        config.customHabit3ColorHex = customColor3
 
         config.graceDaysPerMonth = graceDays
         config.graceUsedThisMonth = 0
