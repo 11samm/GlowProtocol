@@ -13,6 +13,7 @@ struct OnboardingView: View {
     @State private var viewModel = OnboardingViewModel()
     @Environment(\.modelContext) private var modelContext
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("onboardingSkipsWelcome") private var onboardingSkipsWelcome = false
 
     var body: some View {
         ZStack {
@@ -31,7 +32,13 @@ struct OnboardingView: View {
                 HabitCustomizerView(
                     viewModel: viewModel,
                     onBack: { viewModel.previousStep() },
-                    onConfirm: { viewModel.nextStep() }
+                    onConfirm: {
+                        if viewModel.shouldShowGraceStep {
+                            viewModel.nextStep()  // → .grace (Medium only)
+                        } else {
+                            finish()              // Hard and Soft skip grace
+                        }
+                    }
                 )
                 .transition(.opacity)
             case .grace:
@@ -44,6 +51,12 @@ struct OnboardingView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.step)
+        .onAppear {
+            if onboardingSkipsWelcome {
+                onboardingSkipsWelcome = false
+                viewModel.step = .difficulty
+            }
+        }
     }
 
     private func finish() {

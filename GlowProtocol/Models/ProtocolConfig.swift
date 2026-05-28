@@ -25,9 +25,9 @@ enum DifficultyPreset: String, Codable, CaseIterable, Identifiable {
 
     var subtitle: String {
         switch self {
-        case .hard: return "No grace days · All habits"
-        case .medium: return "2 grace days · All habits"
-        case .soft: return "3 grace days · Your habits"
+        case .hard: return "No grace days · 2 workouts · All habits"
+        case .medium: return "2 grace days · 1 workout · All habits"
+        case .soft: return "No punishment · 1 workout · Your habits"
         }
     }
 
@@ -91,6 +91,17 @@ final class ProtocolConfig {
     var customHabit2ColorHex: String?
     var customHabit3ColorHex: String?
 
+    // Soft mode — no streak penalty on failure
+    var noPunishment: Bool
+
+    // Hard mode — editable habit description details
+    var hardWaterDetail: String?
+    var hardReadingDetail: String?
+    var hardDietDetail: String?
+
+    // Hard mode — first workout is outdoors
+    var workout1Outdoors: Bool
+
     init() {
         self.difficultyPresetRaw = DifficultyPreset.hard.rawValue
         self.graceDaysPerMonth = 0
@@ -119,6 +130,11 @@ final class ProtocolConfig {
         self.customHabit1ColorHex = nil
         self.customHabit2ColorHex = nil
         self.customHabit3ColorHex = nil
+        self.noPunishment = false
+        self.hardWaterDetail = nil
+        self.hardReadingDetail = nil
+        self.hardDietDetail = nil
+        self.workout1Outdoors = true
     }
 
     var difficultyPreset: DifficultyPreset {
@@ -160,7 +176,7 @@ final class ProtocolConfig {
         graceUsedThisMonth = 0
         graceResetDate = Calendar.current.startOfDay(for: .now)
         switch preset {
-        case .hard, .medium:
+        case .hard:
             workoutEnabled = true
             waterEnabled = true
             dietEnabled = true
@@ -168,9 +184,25 @@ final class ProtocolConfig {
             noAlcoholEnabled = true
             progressPhotoEnabled = true
             stepsEnabled = true
-            workoutCountPerDay = preset.defaultWorkoutCount
+            workoutCountPerDay = 2
+            workout1Outdoors = true
+            noPunishment = false
+        case .medium:
+            workoutEnabled = true
+            waterEnabled = true
+            dietEnabled = true
+            readingEnabled = true
+            noAlcoholEnabled = true
+            progressPhotoEnabled = true
+            stepsEnabled = true
+            workoutCountPerDay = 1
+            workout1Outdoors = false
+            noPunishment = false
         case .soft:
             workoutCountPerDay = 1
+            graceDaysPerMonth = 0
+            workout1Outdoors = false
+            noPunishment = true
         }
     }
 }

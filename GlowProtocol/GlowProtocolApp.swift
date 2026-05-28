@@ -12,6 +12,11 @@ import SwiftData
 struct GlowProtocolApp: App {
     @AppStorage("appearancePreference") private var appearancePreference: String = "light"
 
+    /// Set to true by the container initializer when it has to destroy an
+    /// unmigrateable store — `init()` then resets onboarding so the user
+    /// re-configures rather than entering a broken state.
+    private static var storeWasDestroyedForMigration = false
+
     /// Shared container — uses the App Group container when available so the
     /// widget extension can read the same store; otherwise falls back to the
     /// app's own Documents directory.
@@ -38,7 +43,20 @@ struct GlowProtocolApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            // Last-ditch in-memory fallback so the app at least launches.
+            // Migration failed (e.g. new non-optional columns added to schema).
+            // Destroy the stale SQLite triple and recreate from scratch.
+            // The user will be sent back through onboarding in init().
+            let companions = [storeURL,
+                              storeURL.appendingPathExtension("shm"),
+                              storeURL.appendingPathExtension("wal")]
+            companions.forEach { try? FileManager.default.removeItem(at: $0) }
+            GlowProtocolApp.storeWasDestroyedForMigration = true
+
+            // Retry with the now-empty location.
+            if let fresh = try? ModelContainer(for: schema, configurations: [config]) {
+                return fresh
+            }
+            // Absolute last resort — in-memory so the app at least renders.
             return try! ModelContainer(
                 for: schema,
                 configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]
@@ -47,6 +65,12 @@ struct GlowProtocolApp: App {
     }()
 
     init() {
+        if GlowProtocolApp.storeWasDestroyedForMigration {
+            // Store was wiped — force the user back through onboarding so they
+            // reconfigure their difficulty and habits from a clean slate.
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.set(true, forKey: "onboardingSkipsWelcome")
+        }
         BackgroundTaskService.shared.register(container: sharedModelContainer)
     }
 

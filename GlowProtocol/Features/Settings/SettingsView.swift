@@ -19,6 +19,8 @@ struct SettingsView: View {
     @AppStorage("dailyReminderEnabled") private var dailyReminderEnabled: Bool = false
     @AppStorage("dailyReminderHour") private var dailyReminderHour: Int = 8
     @AppStorage("dailyReminderMinute") private var dailyReminderMinute: Int = 0
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = true
+    @AppStorage("onboardingSkipsWelcome") private var onboardingSkipsWelcome: Bool = false
 
     @State private var showResetConfirm = false
     @State private var showDifficultyEditor = false
@@ -55,10 +57,12 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) {
                 viewModel.resetProtocol()
+                onboardingSkipsWelcome = true
+                hasCompletedOnboarding = false
                 dismiss()
             }
         } message: {
-            Text("This deletes all progress and photos and returns you to Day 1.")
+            Text("This clears all progress and lets you reconfigure your difficulty and habits from the start.")
         }
         .sheet(isPresented: $showDifficultyEditor) {
             EditDifficultySheet(viewModel: viewModel)

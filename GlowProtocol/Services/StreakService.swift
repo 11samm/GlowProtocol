@@ -44,7 +44,8 @@ final class StreakService {
         var items: [(HabitID, String?, String?, String?)] = []
 
         if config.workoutEnabled {
-            items.append((.workout1, nil, nil, nil))
+            let workout1Label: String? = config.workout1Outdoors ? "Workout 1 · Outdoors" : nil
+            items.append((.workout1, workout1Label, nil, nil))
             if config.workoutCountPerDay >= 2 {
                 items.append((.workout2, nil, nil, nil))
             }
@@ -208,6 +209,13 @@ final class StreakService {
         let log = fetchDayLog(on: targetDate) ?? seedDayLog(for: targetDate, config: config)
 
         if log.allRequiredComplete {
+            log.streakHeld = true
+            try? context.save()
+            return .streakHeld
+        }
+
+        // Soft mode: never fail — mark the day as held regardless of completion.
+        if config.noPunishment {
             log.streakHeld = true
             try? context.save()
             return .streakHeld

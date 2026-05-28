@@ -38,6 +38,14 @@ final class OnboardingViewModel {
     var customColor2: String = "#E0E0E0"
     var customColor3: String = "#E0E0E0"
 
+    // New fields for v2 onboarding
+    var noPunishment: Bool = false
+    var workout1Outdoors: Bool = true
+    var hardWaterDetail: String = "1 gallon · no other drinks"
+    var hardReadingDetail: String = "10 pages"
+    var hardDietDetail: String = "Your chosen plan"
+    var hardWorkout2Detail: String = "45 min"
+
     enum Step: Int, CaseIterable {
         case welcome
         case difficulty
@@ -62,12 +70,20 @@ final class OnboardingViewModel {
 
     var canContinueFromHabits: Bool { enabledCount >= 4 }
 
+    /// Only Medium passes through the grace-day picker step.
+    var shouldShowGraceStep: Bool { preset == .medium }
+
+    var isHard: Bool { preset == .hard }
+
+    /// Computed detail label for Workout 1 based on `workout1Outdoors`.
+    var workout1Detail: String { workout1Outdoors ? "45 min · Outdoors" : "45 min" }
+
     func applyPreset(_ preset: DifficultyPreset) {
         self.preset = preset
         self.graceDays = preset.defaultGraceDays
         self.workoutCount = preset.defaultWorkoutCount
         switch preset {
-        case .hard, .medium:
+        case .hard:
             workoutEnabled = true
             waterEnabled = true
             dietEnabled = true
@@ -75,8 +91,22 @@ final class OnboardingViewModel {
             noAlcoholEnabled = true
             photoEnabled = true
             stepsEnabled = true
+            workout1Outdoors = true
+            noPunishment = false
+        case .medium:
+            workoutEnabled = true
+            waterEnabled = true
+            dietEnabled = true
+            readingEnabled = true
+            noAlcoholEnabled = true
+            photoEnabled = true
+            stepsEnabled = true
+            workout1Outdoors = false
+            noPunishment = false
         case .soft:
-            break
+            workout1Outdoors = false
+            noPunishment = true
+            graceDays = 0
         }
     }
 
@@ -120,6 +150,12 @@ final class OnboardingViewModel {
         config.customHabit1ColorHex = customColor1
         config.customHabit2ColorHex = customColor2
         config.customHabit3ColorHex = customColor3
+
+        config.noPunishment = noPunishment
+        config.workout1Outdoors = workout1Outdoors
+        config.hardWaterDetail = hardWaterDetail.trimmingCharacters(in: .whitespaces).nilIfEmpty
+        config.hardReadingDetail = hardReadingDetail.trimmingCharacters(in: .whitespaces).nilIfEmpty
+        config.hardDietDetail = hardDietDetail.trimmingCharacters(in: .whitespaces).nilIfEmpty
 
         config.graceDaysPerMonth = graceDays
         config.graceUsedThisMonth = 0
