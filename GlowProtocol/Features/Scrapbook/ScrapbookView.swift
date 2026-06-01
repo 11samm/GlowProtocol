@@ -11,8 +11,8 @@ import SwiftData
 struct ScrapbookView: View {
     @Environment(\.modelContext) private var context
     @State private var viewModel = ScrapbookViewModel()
-    @State private var selectedMonth: Date = Date.now.glowStartOfDay
     @State private var fullscreenPhoto: ScrapbookPhoto?
+    @State private var captureTarget: CaptureTarget?
     @State private var showBeforeAfter = false
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
@@ -24,17 +24,20 @@ struct ScrapbookView: View {
                 customNavBar
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(selectedMonth.glowMonthYearLabel)
+                        Text(viewModel.headerLabel)
                             .font(.glowSerif(size: 28, weight: .bold, italic: true))
                             .foregroundStyle(Color.glowTextPrimary)
                             .padding(.horizontal, GlowSpacing.s24)
                             .padding(.top, GlowSpacing.s8)
 
-                        monthPills
-                            .padding(.top, GlowSpacing.s8)
+                        Text("Your 75 days, start to finish.")
+                            .glowText(.caption)
+                            .foregroundStyle(Color.glowTextSecondary)
+                            .padding(.horizontal, GlowSpacing.s24)
+                            .padding(.top, GlowSpacing.s4)
 
                         LazyVGrid(columns: columns, spacing: 2) {
-                            ForEach(viewModel.daysIn(month: selectedMonth), id: \.self) { date in
+                            ForEach(viewModel.protocolDates, id: \.self) { date in
                                 cell(for: date)
                                     .onTapGesture { handleTap(date) }
                             }
@@ -48,6 +51,18 @@ struct ScrapbookView: View {
         .onAppear { viewModel.bind(context: context) }
         .fullScreenCover(item: $fullscreenPhoto) { photo in
             FullScreenPhotoView(photo: photo) { fullscreenPhoto = nil }
+        }
+        .fullScreenCover(item: $captureTarget) { target in
+            ScrapbookDayCaptureView(
+                date: target.date,
+                dayNumber: target.dayNumber,
+                runID: viewModel.currentRunID()
+            ) {
+                viewModel.refresh()
+                captureTarget = nil
+            } onCancel: {
+                captureTarget = nil
+            }
         }
         .sheet(isPresented: $showBeforeAfter) {
             BeforeAfterSliderView()
@@ -74,32 +89,6 @@ struct ScrapbookView: View {
         .padding(.vertical, GlowSpacing.s8)
     }
 
-    private var monthPills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(viewModel.months, id: \.self) { month in
-                    let active = Calendar.current.isDate(month, equalTo: selectedMonth, toGranularity: .month)
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            selectedMonth = month
-                        }
-                    } label: {
-                        Text(month.glowMonthYearLabel)
-                            .glowText(.caption)
-                            .foregroundStyle(active ? Color.glowSurface : Color.glowTextSecondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule().fill(active ? Color.glowTextPrimary : Color.glowSurfaceSecondary)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, GlowSpacing.s16)
-        }
-    }
-
     private func cell(for date: Date) -> some View {
         ScrapbookCell(state: viewModel.cellState(for: date))
     }
@@ -107,8 +96,19 @@ struct ScrapbookView: View {
     private func handleTap(_ date: Date) {
         if let photo = viewModel.photo(for: date) {
             fullscreenPhoto = photo
+        } else if viewModel.isCaptureable(date) {
+            // Dev affordance: tap any past/today cell to capture a photo for it.
+            captureTarget = CaptureTarget(date: date.glowStartOfDay,
+                                          dayNumber: viewModel.dayNumber(for: date))
         }
     }
+}
+
+/// Identifiable wrapper so an arbitrary day can drive a capture cover.
+struct CaptureTarget: Identifiable {
+    let date: Date
+    let dayNumber: Int
+    var id: TimeInterval { date.timeIntervalSince1970 }
 }
 
 struct FullScreenPhotoView: View {

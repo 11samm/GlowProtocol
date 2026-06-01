@@ -79,7 +79,7 @@ struct IdentitySelectionView: View {
             }
             HapticService.shared.play(.lightTap)
         } label: {
-            VStack(alignment: .leading, spacing: GlowSpacing.s8) {
+            VStack(alignment: .leading, spacing: GlowSpacing.s4) {
                 Image(systemName: identity.icon)
                     .font(.system(size: 26, weight: .medium))
                     .foregroundStyle(Color.glowTextPrimary)
@@ -87,9 +87,12 @@ struct IdentitySelectionView: View {
                 Text(identity.title)
                     .glowText(.headline)
                     .foregroundStyle(Color.glowTextPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(identity.subtitle)
                     .glowText(.caption)
                     .foregroundStyle(Color.glowTextSecondary)
+                    .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

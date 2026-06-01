@@ -18,13 +18,23 @@ struct ScrapbookCell: View {
     let state: State
 
     var body: some View {
-        ZStack {
-            switch state {
-            case .filled(let thumb, let day, let isToday, let archived):
+        // A fixed square footprint: the clear base fits the available cell
+        // width and forces a 1:1 ratio, so every cell — photo or placeholder —
+        // is identically sized. Photos fill + center-crop into the square.
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay { content }
+            .clipShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch state {
+        case .filled(let thumb, let day, let isToday, let archived):
+            ZStack {
                 Image(uiImage: thumb)
                     .resizable()
                     .scaledToFill()
-                    .clipped()
                 VStack {
                     HStack {
                         Spacer()
@@ -46,10 +56,11 @@ struct ScrapbookCell: View {
                     }
                 }
                 if isToday {
-                    Rectangle()
-                        .strokeBorder(Color.glowTextPrimary, lineWidth: 2)
+                    Rectangle().strokeBorder(Color.glowTextPrimary, lineWidth: 2)
                 }
-            case .empty(let day, let isToday):
+            }
+        case .empty(let day, let isToday):
+            ZStack {
                 Rectangle().fill(Color.glowSurfaceSecondary)
                 VStack(spacing: 4) {
                     Image(systemName: "camera.fill")
@@ -60,14 +71,11 @@ struct ScrapbookCell: View {
                         .foregroundStyle(Color.glowTextDisabled)
                 }
                 if isToday {
-                    Rectangle()
-                        .strokeBorder(Color.glowTextPrimary, lineWidth: 2)
+                    Rectangle().strokeBorder(Color.glowTextPrimary, lineWidth: 2)
                 }
-            case .future:
-                Rectangle().fill(Color.glowBackground)
             }
+        case .future:
+            Rectangle().fill(Color.glowBackground)
         }
-        .aspectRatio(1, contentMode: .fill)
-        .clipped()
     }
 }

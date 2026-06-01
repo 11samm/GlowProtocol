@@ -33,18 +33,22 @@ final class ScrapbookViewModel {
         photos = (try? context.fetch(descriptor)) ?? []
     }
 
-    /// All months between start date and today, newest first.
-    var months: [Date] {
-        guard let config else { return [Date.now.glowStartOfDay] }
-        var results: [Date] = []
+    /// The protocol's start day, normalized.
+    var startDay: Date { (config?.startDate ?? Date.now).glowStartOfDay }
+
+    /// Total number of days the grid spans (the protocol length).
+    var targetDays: Int { config?.targetDays ?? 75 }
+
+    /// Editorial header label — the month/year the protocol began.
+    var headerLabel: String { startDay.glowMonthYearLabel }
+
+    /// Ordered protocol days (Day 1 → targetDays), so Day 1 is always the
+    /// first cell in the grid regardless of which calendar day it falls on.
+    var protocolDates: [Date] {
         let calendar = Calendar.current
-        var cursor = calendar.date(from: calendar.dateComponents([.year, .month], from: config.startDate)) ?? Date.now
-        let endMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: Date.now)) ?? Date.now
-        while cursor <= endMonth {
-            results.append(cursor)
-            cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? cursor
+        return (0..<max(1, targetDays)).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: startDay)
         }
-        return results.reversed()
     }
 
     func photo(for date: Date) -> ScrapbookPhoto? {
@@ -66,21 +70,20 @@ final class ScrapbookViewModel {
     }
 
     func dayNumber(for date: Date) -> Int {
-        guard let config else { return 1 }
         let days = Calendar.current.dateComponents([.day],
-                                                   from: config.startDate.glowStartOfDay,
+                                                   from: startDay,
                                                    to: date.glowStartOfDay).day ?? 0
         return max(1, days + 1)
     }
 
-    /// All daily cells for a given month: returns dates from the 1st to last day.
-    func daysIn(month: Date) -> [Date] {
-        let calendar = Calendar.current
-        guard let range = calendar.range(of: .day, in: .month, for: month),
-              let first = calendar.date(from: calendar.dateComponents([.year, .month], from: month))
-        else { return [] }
-        return range.compactMap { day in
-            calendar.date(byAdding: .day, value: day - 1, to: first)
-        }
+    /// Whether a given protocol date can accept a photo (today or in the past).
+    func isCaptureable(_ date: Date) -> Bool {
+        date.glowStartOfDay <= Date.now.glowStartOfDay
+    }
+
+    /// The runID of the active protocol run, ensuring today's log exists.
+    func currentRunID() -> UUID {
+        guard let context else { return UUID() }
+        return StreakService(context: context).currentDayLog().runID
     }
 }

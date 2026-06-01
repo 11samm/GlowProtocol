@@ -60,7 +60,7 @@ struct PhotoCaptureView: View {
     }
 }
 
-private struct CameraPicker: UIViewControllerRepresentable {
+struct CameraPicker: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     var onCancel: () -> Void
 
@@ -93,7 +93,7 @@ private struct CameraPicker: UIViewControllerRepresentable {
     }
 }
 
-private struct PhotoLibraryFallback: UIViewControllerRepresentable {
+struct PhotoLibraryFallback: UIViewControllerRepresentable {
     @Binding var image: UIImage?
     var onCancel: () -> Void
 
