@@ -79,4 +79,8 @@ extension Color {
 
     /// Grace day pulse / accent — warm amber.
     static let glowGracePulse = Color.dynamic(light: "#F5DFA0", dark: "#8C6D2A")
+
+    /// Savings badge accent — a refined forest green for the paywall "Save" tag.
+    /// Used only as a small pill background, never a full surface.
+    static let glowSavings = Color.dynamic(light: "#2E7D52", dark: "#3FA56E")
 }

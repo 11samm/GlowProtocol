@@ -48,12 +48,14 @@ struct WelcomeSlideView: View {
         VStack(alignment: .leading, spacing: GlowSpacing.s32) {
             Spacer()
             VStack(alignment: .leading, spacing: 4) {
-                Text("Do it")
-                    .font(.glowSerif(size: 48, weight: .bold))
-                Text("with")
-                    .font(.glowSerif(size: 48, weight: .regular))
-                Text("discipline.")
-                    .font(.glowSerif(size: 48, weight: .bold, italic: true))
+                Text("Become")
+                    .font(.glowSerif(size: 44, weight: .regular))
+                Text("the woman")
+                    .font(.glowSerif(size: 44, weight: .bold, italic: true))
+                Text("you keep")
+                    .font(.glowSerif(size: 44, weight: .regular))
+                Text("putting off.")
+                    .font(.glowSerif(size: 44, weight: .bold))
             }
             .foregroundStyle(Color.glowTextPrimary)
             Text("75 days. Your rules. Your transformation.")
@@ -80,6 +82,9 @@ struct WelcomeSlideView: View {
                 proofRow("Grace days built in")
                 proofRow("Private photo scrapbook")
             }
+            Text("Join 94,000 women already on their protocol.")
+                .glowText(.body)
+                .foregroundStyle(Color.glowTextSecondary)
             Spacer().frame(height: 80)
         }
         .padding(.horizontal, GlowSpacing.s24)
@@ -100,14 +105,14 @@ struct WelcomeSlideView: View {
     private var invitationSlide: some View {
         VStack(alignment: .leading, spacing: GlowSpacing.s24) {
             Spacer()
-            Text("Ready to glow?")
+            Text("Your 75 days\nstart now.")
                 .font(.glowSerif(size: 44, weight: .bold, italic: true))
                 .foregroundStyle(Color.glowTextPrimary)
-            Text("Your 75 days start the moment you say so.")
+            Text("Your transformation begins the moment you say so.")
                 .glowText(.body)
                 .foregroundStyle(Color.glowTextSecondary)
             Spacer()
-            GlowButton(title: "Begin Protocol", action: onBegin)
+            GlowButton(title: "Begin", action: onBegin)
                 .padding(.bottom, GlowSpacing.s16)
         }
         .padding(.horizontal, GlowSpacing.s24)

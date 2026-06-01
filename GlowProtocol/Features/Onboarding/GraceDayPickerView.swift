@@ -18,11 +18,11 @@ struct GraceDayPickerView: View {
             VStack(alignment: .leading, spacing: 0) {
                 navBar
                 VStack(alignment: .leading, spacing: GlowSpacing.s16) {
-                    Text("Your grace days.")
+                    Text(headline)
                         .font(.glowSerif(size: 36, weight: .bold, italic: true))
                         .foregroundStyle(Color.glowTextPrimary)
                         .padding(.top, GlowSpacing.s24)
-                    Text("Life happens. Grace days let you miss one habit without resetting your streak. Use them intentionally — they're not a habit. They're a lifeline.")
+                    Text("Life happens. Grace days let you miss a day without losing your streak. Use them wisely — they're rare.")
                         .glowText(.body)
                         .foregroundStyle(Color.glowTextSecondary)
                         .lineSpacing(4)
@@ -46,6 +46,10 @@ struct GraceDayPickerView: View {
                 .padding(.horizontal, GlowSpacing.s16)
             }
         }
+    }
+
+    private var headline: String {
+        viewModel.hasName ? "Your safety net,\n\(viewModel.trimmedName)." : "Your grace days."
     }
 
     private var navBar: some View {

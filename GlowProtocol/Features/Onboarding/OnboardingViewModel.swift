@@ -9,12 +9,20 @@
 import Foundation
 import Observation
 import SwiftData
+import SwiftUI
 
 @Observable
 final class OnboardingViewModel {
     var step: Step = .welcome
     var preset: DifficultyPreset?
     var graceDays: Int = 0
+
+    // MARK: - Personalization (v3 expanded onboarding)
+
+    var userName: String = ""
+    var selectedIdentityID: String?
+    var selectedGoalIDs: Set<String> = []
+    var selectedLifestyleID: String?
 
     var workoutEnabled = true
     var workoutMinutes = 45
@@ -48,9 +56,43 @@ final class OnboardingViewModel {
 
     enum Step: Int, CaseIterable {
         case welcome
+        case name
+        case identity
+        case goal
+        case lifestyle
+        case socialProof
         case difficulty
         case habits
         case grace
+        case loading
+        case summary
+        case paywall
+        case notifications
+    }
+
+    // MARK: - Personalization helpers
+
+    /// Trimmed name, or empty when the user hasn't provided one (e.g. reconfigure flow).
+    var trimmedName: String {
+        userName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var hasName: Bool { !trimmedName.isEmpty }
+
+    var canContinueFromName: Bool { !trimmedName.isEmpty }
+    var canContinueFromGoals: Bool { !selectedGoalIDs.isEmpty }
+
+    /// Possessive form of the user's name, e.g. "Ava's". Falls back to "Your".
+    var possessiveName: String { hasName ? "\(trimmedName)'s" : "Your" }
+
+    /// The difficulty preset recommended by the chosen lifestyle (Step 5).
+    var recommendedPreset: DifficultyPreset? {
+        switch selectedLifestyleID {
+        case "rise", "intense": return .hard
+        case "balanced": return .medium
+        case "soft": return .soft
+        default: return nil
+        }
     }
 
     var enabledCount: Int {
@@ -69,6 +111,53 @@ final class OnboardingViewModel {
     }
 
     var canContinueFromHabits: Bool { enabledCount >= 4 }
+
+    /// Display-ready list of the currently enabled habits, used by the summary
+    /// and paywall screens.
+    var summaryHabits: [OnboardingHabitDisplay] {
+        var items: [OnboardingHabitDisplay] = []
+
+        if workoutEnabled {
+            if isHard && workoutCount >= 2 {
+                items.append(.init(id: "workout1", symbol: HabitID.workout1.symbolName, color: HabitID.workout1.pastel, label: "Workout 1"))
+                items.append(.init(id: "workout2", symbol: HabitID.workout2.symbolName, color: HabitID.workout2.pastel, label: "Workout 2"))
+            } else {
+                items.append(.init(id: "workout", symbol: HabitID.workout1.symbolName, color: HabitID.workout1.pastel, label: "Workout"))
+            }
+        }
+        if waterEnabled {
+            items.append(.init(id: "water", symbol: HabitID.water.symbolName, color: HabitID.water.pastel, label: HabitID.water.defaultLabel))
+        }
+        if dietEnabled {
+            items.append(.init(id: "diet", symbol: HabitID.diet.symbolName, color: HabitID.diet.pastel, label: HabitID.diet.defaultLabel))
+        }
+        if readingEnabled {
+            items.append(.init(id: "reading", symbol: HabitID.reading.symbolName, color: HabitID.reading.pastel, label: HabitID.reading.defaultLabel))
+        }
+        if stepsEnabled {
+            items.append(.init(id: "steps", symbol: HabitID.steps.symbolName, color: HabitID.steps.pastel, label: HabitID.steps.defaultLabel))
+        }
+        if noAlcoholEnabled {
+            items.append(.init(id: "noAlcohol", symbol: HabitID.noAlcohol.symbolName, color: HabitID.noAlcohol.pastel, label: HabitID.noAlcohol.defaultLabel))
+        }
+        if photoEnabled {
+            items.append(.init(id: "photo", symbol: HabitID.progressPhoto.symbolName, color: HabitID.progressPhoto.pastel, label: HabitID.progressPhoto.defaultLabel))
+        }
+
+        let customs: [(String, String, String)] = [
+            (custom1, customIcon1, customColor1),
+            (custom2, customIcon2, customColor2),
+            (custom3, customIcon3, customColor3),
+        ]
+        for (text, icon, colorHex) in customs {
+            let trimmed = text.trimmingCharacters(in: .whitespaces)
+            if !trimmed.isEmpty {
+                items.append(.init(id: "custom-\(trimmed)", symbol: icon, color: Color(hex: colorHex), label: trimmed))
+            }
+        }
+
+        return items
+    }
 
     /// Only Medium passes through the grace-day picker step.
     var shouldShowGraceStep: Bool { preset == .medium }
@@ -128,6 +217,12 @@ final class OnboardingViewModel {
         let config = service.fetchOrCreateConfig()
         let chosen = preset ?? .hard
         config.applyPresetDefaults(chosen)
+
+        // Persist the user's name for post-onboarding personalization.
+        config.userName = trimmedName
+        if hasName {
+            UserDefaults.standard.set(trimmedName, forKey: "glowUserName")
+        }
 
         config.workoutEnabled = workoutEnabled
         config.workoutMinutes = workoutMinutes

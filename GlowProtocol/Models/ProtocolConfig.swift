@@ -57,6 +57,9 @@ enum DifficultyPreset: String, Codable, CaseIterable, Identifiable {
 
 @Model
 final class ProtocolConfig {
+    /// The user's chosen name — collected during onboarding for personalization.
+    var userName: String = ""
+
     var difficultyPresetRaw: String
     var graceDaysPerMonth: Int
     var graceUsedThisMonth: Int
@@ -103,6 +106,7 @@ final class ProtocolConfig {
     var workout1Outdoors: Bool
 
     init() {
+        self.userName = ""
         self.difficultyPresetRaw = DifficultyPreset.hard.rawValue
         self.graceDaysPerMonth = 0
         self.graceUsedThisMonth = 0

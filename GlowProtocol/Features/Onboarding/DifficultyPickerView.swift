@@ -20,7 +20,7 @@ struct DifficultyPickerView: View {
                 navBar
                 ScrollView {
                     VStack(alignment: .leading, spacing: GlowSpacing.s16) {
-                        Text("How hard\nare you going?")
+                        Text(headline)
                             .font(.glowSerif(size: 32, weight: .bold, italic: true))
                             .foregroundStyle(Color.glowTextPrimary)
                             .padding(.top, GlowSpacing.s24)
@@ -47,6 +47,17 @@ struct DifficultyPickerView: View {
                 .padding(.bottom, GlowSpacing.s24)
             }
         }
+        .onAppear {
+            // Pre-select the preset recommended by the lifestyle answer (Step 5),
+            // unless the user has already chosen one.
+            if viewModel.preset == nil, let recommended = viewModel.recommendedPreset {
+                viewModel.applyPreset(recommended)
+            }
+        }
+    }
+
+    private var headline: String {
+        viewModel.hasName ? "Choose your\nlevel, \(viewModel.trimmedName)." : "How hard\nare you going?"
     }
 
     private var navBar: some View {
@@ -89,11 +100,22 @@ struct DifficultyPickerView: View {
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(Color.glowTextPrimary)
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(preset.displayName.uppercased())
-                        .glowText(.headline)
-                        .foregroundStyle(Color.glowTextPrimary)
-                        .tracking(2)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: GlowSpacing.s8) {
+                        Text(preset.displayName.uppercased())
+                            .glowText(.headline)
+                            .foregroundStyle(Color.glowTextPrimary)
+                            .tracking(2)
+                        if viewModel.recommendedPreset == preset {
+                            Text("RECOMMENDED")
+                                .font(.glowSans(size: 9, weight: .bold))
+                                .tracking(0.4)
+                                .foregroundStyle(Color.glowSurface)
+                                .padding(.horizontal, GlowSpacing.s8)
+                                .frame(height: 18)
+                                .background(Capsule().fill(Color.glowTextPrimary))
+                        }
+                    }
                     Text(preset.subtitle)
                         .glowText(.caption)
                         .foregroundStyle(Color.glowTextSecondary)

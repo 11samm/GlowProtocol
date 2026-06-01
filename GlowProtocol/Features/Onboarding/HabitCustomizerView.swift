@@ -100,7 +100,7 @@ struct HabitCustomizerView: View {
                 navBar
                 ScrollView {
                     VStack(alignment: .leading, spacing: GlowSpacing.s16) {
-                        Text("Your daily\nhabits.")
+                        Text("\(viewModel.possessiveName)\nnon-negotiables.")
                             .font(.glowSerif(size: 32, weight: .bold, italic: true))
                             .foregroundStyle(Color.glowTextPrimary)
                             .padding(.top, GlowSpacing.s24)
