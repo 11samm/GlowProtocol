@@ -68,7 +68,7 @@ struct RootView: View {
 
         // Catch-up evaluation: if the most recent current-run day is older than
         // today, evaluate each missing day in chronological order.
-        let today = Date.now.glowStartOfDay
+        let today = Date.glowEffectiveNow.glowStartOfDay
         let logs = service.fetchAllCurrentRunLogs().sorted(by: { $0.date < $1.date })
         if let last = logs.last, last.date.glowStartOfDay < today {
             var cursor = last.date.glowStartOfDay

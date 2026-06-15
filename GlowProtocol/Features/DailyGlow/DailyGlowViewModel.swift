@@ -43,7 +43,7 @@ final class DailyGlowViewModel {
 
     private func ensureDayLogIsForToday() {
         guard let service = streakService else { return }
-        let today = Date.now.glowStartOfDay
+        let today = Date.glowEffectiveNow.glowStartOfDay
         if let log = todayLog, log.date.glowStartOfDay != today {
             // Day rolled over — evaluate yesterday then seed today.
             _ = service.evaluateDay(log.date)
@@ -113,6 +113,13 @@ final class DailyGlowViewModel {
     func attachPhoto(_ relativePath: String, for log: DayLog) {
         guard let service = streakService else { return }
         service.attachPhoto(relativePath, to: log)
+    }
+
+    /// Dev-only: marks today's log as streak-held so skipping forward a day
+    /// doesn't evaluate an incomplete day and trigger a fail state / run reset.
+    func markTodayHeldForDebug() {
+        guard let service = streakService, let log = todayLog else { return }
+        service.markDayHeld(log)
     }
 
     func dismissValidator() {

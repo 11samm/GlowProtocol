@@ -74,12 +74,19 @@ final class PhotoService {
         })
 
         if let existing {
+            let previousRunID = existing.runID
+            existing.date = date.glowStartOfDay
+            existing.dayNumber = dayNumber
             existing.fileURL = filename
             existing.thumbnailData = thumbData
             existing.capturedAt = .now
             existing.runID = runID
             existing.isCurrentRun = true
             try? context.save()
+            GlowDebugLog.photoService(
+                "updated existing photo date=\(date.glowShortDayLabel) day=\(dayNumber) file=\(filename) " +
+                "runID \(previousRunID.uuidString.prefix(8))…->\(runID.uuidString.prefix(8))…"
+            )
             return existing
         }
 
@@ -94,6 +101,10 @@ final class PhotoService {
         )
         context.insert(photo)
         try? context.save()
+        GlowDebugLog.photoService(
+            "inserted photo date=\(date.glowShortDayLabel) day=\(dayNumber) file=\(filename) " +
+            "runID=\(runID.uuidString.prefix(8))…"
+        )
         return photo
     }
 

@@ -42,6 +42,7 @@ struct ScrapbookView: View {
                                     .onTapGesture { handleTap(date) }
                             }
                         }
+                        .padding(.horizontal, GlowSpacing.s4)
                         .padding(.top, GlowSpacing.s16)
                         .padding(.bottom, 120)
                     }
@@ -65,7 +66,7 @@ struct ScrapbookView: View {
             }
         }
         .sheet(isPresented: $showBeforeAfter) {
-            BeforeAfterSliderView()
+            BeforeAfterSliderView(runID: viewModel.currentRunID())
                 .presentationDetents([.large])
         }
     }
@@ -77,6 +78,11 @@ struct ScrapbookView: View {
                 .foregroundStyle(Color.glowTextPrimary)
             Spacer()
             Button {
+                let runID = viewModel.currentRunID()
+                GlowDebugLog.scrapbook(
+                    "opening Before & After runID=\(runID.uuidString.prefix(8))… " +
+                    "scrapbookPhotoCount=\(viewModel.photos.count)"
+                )
                 showBeforeAfter = true
             } label: {
                 Image(systemName: "rectangle.lefthalf.inset.filled.arrow.left")

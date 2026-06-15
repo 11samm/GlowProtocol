@@ -52,13 +52,18 @@ final class ScrapbookViewModel {
     }
 
     func photo(for date: Date) -> ScrapbookPhoto? {
-        photos.first { Calendar.current.isDate($0.date, inSameDayAs: date) }
+        // Prefer the active run so archived photos on the same calendar day
+        // don't appear in the grid while being excluded from Before & After.
+        photos.first {
+            Calendar.current.isDate($0.date, inSameDayAs: date) && $0.isCurrentRun
+        }
     }
 
     /// Returns cell state for a given calendar date in a month.
     func cellState(for date: Date) -> ScrapbookCell.State {
-        let isToday = Calendar.current.isDate(date, inSameDayAs: Date.now)
-        if date > Date.now.glowStartOfDay {
+        let effectiveNow = Date.glowEffectiveNow
+        let isToday = Calendar.current.isDate(date, inSameDayAs: effectiveNow)
+        if date > effectiveNow.glowStartOfDay {
             return .future
         }
         if let photo = photo(for: date), let data = photo.thumbnailData, let thumb = UIImage(data: data) {
@@ -78,7 +83,7 @@ final class ScrapbookViewModel {
 
     /// Whether a given protocol date can accept a photo (today or in the past).
     func isCaptureable(_ date: Date) -> Bool {
-        date.glowStartOfDay <= Date.now.glowStartOfDay
+        date.glowStartOfDay <= Date.glowEffectiveNow.glowStartOfDay
     }
 
     /// The runID of the active protocol run, ensuring today's log exists.

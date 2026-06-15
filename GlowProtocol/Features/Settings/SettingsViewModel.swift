@@ -38,17 +38,23 @@ final class SettingsViewModel {
 
     func resetProtocol() {
         guard let context, let service else { return }
-        let descriptor = FetchDescriptor<DayLog>()
-        if let logs = try? context.fetch(descriptor) {
-            for log in logs { context.delete(log) }
+
+        // Archive current run logs — keeps history visible on the Progress screen.
+        let currentLogDesc = FetchDescriptor<DayLog>(
+            predicate: #Predicate<DayLog> { $0.isCurrentRun == true }
+        )
+        if let logs = try? context.fetch(currentLogDesc) {
+            for log in logs { log.isCurrentRun = false }
         }
-        let photoDesc = FetchDescriptor<ScrapbookPhoto>()
-        if let photos = try? context.fetch(photoDesc) {
-            for p in photos {
-                PhotoService.shared.deletePhoto(p.fileURL)
-                context.delete(p)
-            }
+
+        // Archive current run photos — same principle, keep them in past-run records.
+        let currentPhotoDesc = FetchDescriptor<ScrapbookPhoto>(
+            predicate: #Predicate<ScrapbookPhoto> { $0.isCurrentRun == true }
+        )
+        if let photos = try? context.fetch(currentPhotoDesc) {
+            for p in photos { p.isCurrentRun = false }
         }
+
         if let cfg = config {
             cfg.applyPresetDefaults(.hard)
             cfg.startDate = Date.now.glowStartOfDay

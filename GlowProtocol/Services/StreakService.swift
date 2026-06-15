@@ -82,7 +82,7 @@ final class StreakService {
     func currentDayLog() -> DayLog {
         let config = fetchOrCreateConfig()
         rolloverGraceDaysIfNeeded(config: config)
-        let today = Date.now.glowStartOfDay
+        let today = Date.glowEffectiveNow.glowStartOfDay
 
         if let existing = fetchDayLog(on: today) {
             return existing
@@ -112,6 +112,13 @@ final class StreakService {
         let descriptor = FetchDescriptor<DayLog>(
             predicate: #Predicate<DayLog> { $0.isCurrentRun == false },
             sortBy: [SortDescriptor(\.date, order: .forward)]
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+
+    private func fetchAllCurrentRunPhotos() -> [ScrapbookPhoto] {
+        let descriptor = FetchDescriptor<ScrapbookPhoto>(
+            predicate: #Predicate<ScrapbookPhoto> { $0.isCurrentRun == true }
         )
         return (try? context.fetch(descriptor)) ?? []
     }
@@ -200,13 +207,25 @@ final class StreakService {
         case hardReset
     }
 
+    /// Marks a day log as streak-held without requiring habit completion.
+    /// Used by the dev skip control so day advancement doesn't trigger a fail state.
+    func markDayHeld(_ log: DayLog) {
+        log.streakHeld = true
+        try? context.save()
+    }
+
     /// Evaluates `date`'s DayLog and applies streak/grace/reset logic. Returns the outcome.
     @discardableResult
-    func evaluateDay(_ date: Date = .now) -> EvaluateOutcome {
+    func evaluateDay(_ date: Date = Date.glowEffectiveNow) -> EvaluateOutcome {
         let config = fetchOrCreateConfig()
         rolloverGraceDaysIfNeeded(config: config)
         let targetDate = date.glowStartOfDay
         let log = fetchDayLog(on: targetDate) ?? seedDayLog(for: targetDate, config: config)
+
+        // Already evaluated (e.g. completed normally, used grace, or marked held by dev skip).
+        if log.streakHeld {
+            return .streakHeld
+        }
 
         if log.allRequiredComplete {
             log.streakHeld = true
@@ -224,14 +243,15 @@ final class StreakService {
         if config.graceUsedThisMonth < config.graceDaysPerMonth {
             userDefaults.set(true, forKey: Self.pendingGraceDecisionKey)
             userDefaults.set(true, forKey: Self.pendingGraceAvailableKey)
-            userDefaults.set(Date.now.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
+            userDefaults.set(Date.glowEffectiveNow.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
             return .graceAvailable
         }
 
-        performHardReset(triggerFromEvaluation: true)
+        // Defer the actual reset until the user taps "Begin again" in FailStateView.
+        // This prevents silent auto-resets when the user misses multiple days.
         userDefaults.set(true, forKey: Self.pendingGraceDecisionKey)
         userDefaults.set(false, forKey: Self.pendingGraceAvailableKey)
-        userDefaults.set(Date.now.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
+        userDefaults.set(Date.glowEffectiveNow.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
         return .hardReset
     }
 
@@ -260,9 +280,13 @@ final class StreakService {
         for log in logs {
             log.isCurrentRun = false
         }
-        config.startDate = Date.now.glowStartOfDay
+        let photos = fetchAllCurrentRunPhotos()
+        for photo in photos {
+            photo.isCurrentRun = false
+        }
+        config.startDate = Date.glowEffectiveNow.glowStartOfDay
         let newRunID = UUID()
-        let _ = seedDayLogIfMissing(for: Date.now.glowStartOfDay, config: config, runID: newRunID)
+        let _ = seedDayLogIfMissing(for: Date.glowEffectiveNow.glowStartOfDay, config: config, runID: newRunID)
         try? context.save()
         _ = triggerFromEvaluation
     }
@@ -325,7 +349,7 @@ final class StreakService {
     /// Resets `graceUsedThisMonth` to 0 when the calendar month has advanced past `graceResetDate`.
     func rolloverGraceDaysIfNeeded(config: ProtocolConfig) {
         let cal = Calendar.current
-        let now = Date.now
+        let now = Date.glowEffectiveNow
         let resetMonth = cal.component(.month, from: config.graceResetDate)
         let nowMonth = cal.component(.month, from: now)
         let resetYear = cal.component(.year, from: config.graceResetDate)
@@ -345,7 +369,7 @@ final class StreakService {
     func currentStreakLength() -> Int {
         let logs = fetchAllCurrentRunLogs().sorted(by: { $0.date < $1.date })
         let calendar = Calendar.current
-        let today = Date.now.glowStartOfDay
+        let today = Date.glowEffectiveNow.glowStartOfDay
         var streak = 0
         var cursor = today
         // Walk backwards day-by-day; count any day that either held the streak or

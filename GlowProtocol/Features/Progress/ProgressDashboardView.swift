@@ -9,10 +9,15 @@
 import SwiftUI
 import SwiftData
 
+private struct RunIDItem: Identifiable {
+    let id: UUID
+}
+
 struct ProgressDashboardView: View {
     @Environment(\.modelContext) private var context
     @State private var viewModel = GlowProgressViewModel()
     @State private var showSettings = false
+    @State private var beforeAfterItem: RunIDItem?
 
     var body: some View {
         ZStack {
@@ -22,7 +27,9 @@ struct ProgressDashboardView: View {
                     navBar
                     heroCard
                     streakSection
-                    graceSection
+                    if viewModel.graceTotal > 0 {
+                        graceSection
+                    }
                     if !viewModel.habitRates.isEmpty {
                         habitBreakdown
                     }
@@ -38,6 +45,10 @@ struct ProgressDashboardView: View {
         .onAppear { viewModel.bind(context: context) }
         .sheet(isPresented: $showSettings) {
             SettingsView()
+        }
+        .sheet(item: $beforeAfterItem) { item in
+            BeforeAfterSliderView(runID: item.id)
+                .presentationDetents([.large])
         }
     }
 
@@ -216,27 +227,35 @@ struct ProgressDashboardView: View {
     }
 
     private func pastRunRow(_ run: GlowProgressViewModel.ArchivedRun) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("\(run.startDate.glowShortDayLabel) → \(run.endDate.glowShortDayLabel)")
-                    .glowText(.subheadline)
-                    .foregroundStyle(Color.glowTextPrimary)
-                Spacer()
-                Text("\(run.maxDayReached) days")
-                    .glowText(.caption)
-                    .foregroundStyle(Color.glowTextSecondary)
-            }
-            HStack(spacing: 2) {
-                ForEach(run.logs) { log in
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(log.streakHeld ? Color.glowTextPrimary :
-                              (log.graceDayUsed ? Color.glowGracePulse : Color.glowDestructive))
-                        .frame(width: 4, height: 4)
+        Button {
+            beforeAfterItem = RunIDItem(id: run.runID)
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("\(run.startDate.glowShortDayLabel) → \(run.endDate.glowShortDayLabel)")
+                        .glowText(.subheadline)
+                        .foregroundStyle(Color.glowTextPrimary)
+                    Spacer()
+                    Text("\(run.maxDayReached) days")
+                        .glowText(.caption)
+                        .foregroundStyle(Color.glowTextSecondary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.glowTextSecondary)
+                }
+                HStack(spacing: 2) {
+                    ForEach(run.logs) { log in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(log.streakHeld ? Color.glowTextPrimary :
+                                  (log.graceDayUsed ? Color.glowGracePulse : Color.glowDestructive))
+                            .frame(width: 4, height: 4)
+                    }
                 }
             }
+            .padding(GlowSpacing.s16)
+            .glowSurfaceCard()
         }
-        .padding(GlowSpacing.s16)
-        .glowSurfaceCard()
+        .buttonStyle(.plain)
     }
 
     private func sectionLabel(_ text: String) -> some View {

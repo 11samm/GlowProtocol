@@ -150,7 +150,7 @@ final class ProtocolConfig {
     var currentDay: Int {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: startDate)
-        let today = calendar.startOfDay(for: .now)
+        let today = Date.glowEffectiveNow.glowStartOfDay
         let days = calendar.dateComponents([.day], from: start, to: today).day ?? 0
         return max(1, days + 1)
     }

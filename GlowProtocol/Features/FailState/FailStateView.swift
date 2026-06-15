@@ -118,10 +118,7 @@ struct FailStateView: View {
 
     private func acceptReset() {
         let service = StreakService(context: context)
-        // If grace was already exhausted, evaluateDay() already performed the hard reset.
-        if graceAvailable {
-            service.performHardReset()
-        }
+        service.performHardReset()
         service.clearPendingDecision()
         resolved = true
         dismiss()

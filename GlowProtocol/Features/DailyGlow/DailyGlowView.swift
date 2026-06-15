@@ -14,6 +14,7 @@ struct DailyGlowView: View {
     @State private var viewModel = DailyGlowViewModel()
     @State private var undoEntry: HabitEntry?
     @State private var sheetState: SheetState?
+    @AppStorage("debugDayOffset") private var debugDayOffset: Int = 0
 
     enum SheetState: Identifiable {
         case workout(HabitEntry)
@@ -50,11 +51,14 @@ struct DailyGlowView: View {
                         if viewModel.allComplete {
                             completionBanner
                                 .padding(.horizontal, GlowSpacing.s16)
-                                .padding(.bottom, 120)
                                 .transition(.opacity)
                         } else {
-                            Color.clear.frame(height: 120)
+                            Color.clear.frame(height: GlowSpacing.s24)
                         }
+
+                        devControls
+                            .padding(.horizontal, GlowSpacing.s16)
+                            .padding(.bottom, 120)
                     } else {
                         emptyPlaceholder
                             .padding(.top, 80)
@@ -108,7 +112,7 @@ struct DailyGlowView: View {
 
     private var dateStrip: some View {
         HStack {
-            Text(Date.now.glowFullDayLabel)
+            Text(Date.glowEffectiveNow.glowFullDayLabel)
                 .glowText(.caption)
                 .foregroundStyle(Color.glowTextSecondary)
             Spacer()
@@ -234,5 +238,60 @@ struct DailyGlowView: View {
                 .foregroundStyle(Color.glowTextSecondary)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Dev Controls (temporary)
+
+    private var devControls: some View {
+        VStack(alignment: .leading, spacing: GlowSpacing.s8) {
+            HStack(spacing: 4) {
+                Image(systemName: "wrench.and.screwdriver")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Color.glowTextSecondary)
+                Text("DEV CONTROLS")
+                    .glowText(.badge)
+                    .foregroundStyle(Color.glowTextSecondary)
+                    .tracking(2)
+            }
+            HStack(spacing: GlowSpacing.s8) {
+                Button {
+                    viewModel.markTodayHeldForDebug()
+                    debugDayOffset += 1
+                    viewModel.refresh()
+                } label: {
+                    Label("Skip Day +", systemImage: "forward.fill")
+                        .glowText(.subheadline)
+                        .foregroundStyle(Color.glowTextPrimary)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(Color.glowSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: GlowRadius.small, style: .continuous))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    debugDayOffset = 0
+                    viewModel.refresh()
+                } label: {
+                    Label("Reset to Now", systemImage: "clock.arrow.circlepath")
+                        .glowText(.subheadline)
+                        .foregroundStyle(debugDayOffset == 0 ? Color.glowTextSecondary : Color.glowTextPrimary)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(Color.glowSurface)
+                        .clipShape(RoundedRectangle(cornerRadius: GlowRadius.small, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(debugDayOffset == 0)
+            }
+            if debugDayOffset != 0 {
+                Text("Simulating +\(debugDayOffset) day\(debugDayOffset == 1 ? "" : "s") ahead · \(Date.glowEffectiveNow.glowFullDayLabel)")
+                    .glowText(.caption)
+                    .foregroundStyle(Color.glowTextSecondary)
+            }
+        }
+        .padding(GlowSpacing.s16)
+        .background(
+            RoundedRectangle(cornerRadius: GlowRadius.medium, style: .continuous)
+                .stroke(Color.glowDivider, lineWidth: 1)
+        )
     }
 }
