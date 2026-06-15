@@ -39,7 +39,10 @@ struct RootView: View {
         }
         .onAppear(perform: handleAppear)
         .onChange(of: scenePhase) { _, newValue in
-            if newValue == .active { evaluateForeground() }
+            if newValue == .active {
+                evaluateForeground()
+                WorkoutTimerService.shared.syncFromIntent()
+            }
         }
         .fullScreenCover(isPresented: $failStateShown, onDismiss: {
             pendingGraceDecision = false

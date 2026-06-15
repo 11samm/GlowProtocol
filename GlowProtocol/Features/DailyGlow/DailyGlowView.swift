@@ -173,6 +173,8 @@ struct DailyGlowView: View {
         }
         switch entry.habitID {
         case .workout1, .workout2:
+            // Re-open the sheet whether a session is already running or not.
+            // WorkoutTimerView.onAppear calls service.start() only when needed.
             sheetState = .workout(entry)
         case .water:
             sheetState = .water(entry)

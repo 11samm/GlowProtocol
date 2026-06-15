@@ -7,7 +7,25 @@
 		<key>GlowProtocol.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>GlowProtocolWidgets.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>22E2C3162FC52E9B00653F27</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>BB00032FC52E9B00653F27</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>
