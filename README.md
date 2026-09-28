@@ -51,10 +51,3 @@ GlowProtocolTests/    # Unit tests
 GlowProtocolUITests/  # UI tests
 ```
 
-## Development status
-
-The repository contains the app’s tracking and progress flows and a timer Live Activity extension. Home Screen widgets are not yet included. The onboarding paywall is a **development placeholder**: unlock and restore advance onboarding without a StoreKit purchase.
-
-The current SwiftData recovery path can recreate an incompatible local store after a migration failure. Preserve any development data you need before testing schema changes.
-
-For product direction and development notes, see [BLUEPRINT.md](BLUEPRINT.md) and [Sprint2.md](Sprint2.md). These documents include plans beyond the implemented app.
