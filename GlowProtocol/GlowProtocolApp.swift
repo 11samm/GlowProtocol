@@ -42,6 +42,7 @@ struct GlowProtocolApp: App {
 
     init() {
         SubscriptionService.shared.configure()
+        FriendsService.shared.configure()
         if let sharedModelContainer {
             BackgroundTaskService.shared.register(container: sharedModelContainer)
         }
@@ -54,7 +55,14 @@ struct GlowProtocolApp: App {
                     .modelContainer(sharedModelContainer)
                     .preferredColorScheme(colorScheme(for: appearancePreference))
                     .onOpenURL { url in
-                        Superwall.handleDeepLink(url)
+                        if FriendInvitation.code(from: url) != nil {
+                            FriendsService.shared.receiveInvite(url)
+                            FriendsService.shared.requestedHomeTab = "friends"
+                        } else if url.scheme == "glowprotocol", url.host == "today" {
+                            FriendsService.shared.requestedHomeTab = "daily"
+                        } else {
+                            Superwall.handleDeepLink(url)
+                        }
                     }
             } else {
                 ContentUnavailableView(

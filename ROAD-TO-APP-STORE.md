@@ -1,6 +1,6 @@
 # Glow Protocol — from now to the App Store
 
-Updated September 29, 2026. This is the current execution plan. `MVP-SHIP-PLAN.md` retains the technical checklist and `SUPERWALL-INTEGRATION.md` retains the purchase setup details. This plan adds the onboarding direction and Home Screen widgets to v1.
+Updated September 30, 2026. This is the current execution plan. `MVP-SHIP-PLAN.md` retains the technical checklist and `SUPERWALL-INTEGRATION.md` retains the purchase setup details. Onboarding redesign is deferred until the current feature work is verified, as requested.
 
 ## Release goal
 
@@ -16,18 +16,18 @@ Suggested App Store name: **Glow Protocol: 75 Day Habits**. Suggested subtitle: 
 - [x] SuperwallKit is installed and configured with the supplied public iOS key.
 - [x] Onboarding and returning-user subscription gates, restore handling, and preview URL scheme are implemented.
 - [x] Owner reports subscription configuration completed. Treat this as setup completed, with real purchase validation still pending.
-- [x] App and test targets compile; 12 unit regression tests passed in the last run.
+- [x] App, widget and test targets compile; 15 unit tests passed on September 30 after Friends/widget changes. Local PostgreSQL privacy tests passed. UI/physical-device tests remain open; Xcode Friends preview timed out twice.
 - [x] Saved store preservation, archived runs, separate photo paths, partial water persistence, and grace-date fixes are implemented.
 - [x] Visible development controls are removed.
 - [x] Workout Live Activity extension and App Group configuration exist.
-- [ ] Home Screen widgets: **not implemented**. The widget bundle currently contains only `GlowTimerLiveActivity`.
-- [x] Supabase project URL and public publishable key are configured in the app. The Auth settings endpoint responded successfully on September 29; Apple and Google providers were verified enabled on September 30; actual sign-in flows still need implementation and testing.
-- [ ] Friends/authentication/backend: not implemented. Provider switches are enabled; authentication code and database migrations remain required.
+- [x] Small and medium daily progress widgets implemented with App Group snapshots, private habit names by default, midnight stale-state handling, and Today navigation. Widget gallery/device QA remains pending.
+- [x] Supabase project URL and public publishable key configured; Apple and Google providers enabled; `glowprotocol://auth/callback` allowed. Actual sign-in flows are implemented and require device testing.
+- [x] Friends UI, Apple/Google authentication, private requests, opt-in summaries, remove/block/report, logout and deletion integration implemented. Migration and deletion function deployed; app login callback configured. Local SQL privacy tests passed. Real two-account and Apple revocation tests remain pending. See `FRIENDS-SETUP.md` and `FRIENDS-DESIGN-PHILOSOPHY.md`.
 - [ ] Full purchase/device/UI QA, public privacy/support pages, and submission materials remain open.
 
 ## What the supplied references teach us
 
-Reviewed all **55 Reset75 PNGs** in `/Users/sam/Downloads/Reset75/` and **78 Her 75 PNGs** in `/Users/sam/Downloads/Her75App/`. Several are alternate selections or repeated screens. These are design references; screenshots alone cannot establish conversion rates or why an app succeeds.
+Reviewed all **55 Reset75 PNGs** in `Reset75/` and **78 Her 75 PNGs** in `Her75App/`. Several are alternate selections or repeated screens. These are design references; screenshots alone cannot establish conversion rates or why an app succeeds.
 
 | Reference | Observed pattern | Planned adaptation |
 |---|---|---|

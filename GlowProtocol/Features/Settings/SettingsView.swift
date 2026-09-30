@@ -21,6 +21,7 @@ struct SettingsView: View {
     @AppStorage("dailyReminderMinute") private var dailyReminderMinute: Int = 0
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = true
     @AppStorage("onboardingSkipsWelcome") private var onboardingSkipsWelcome: Bool = false
+    @AppStorage("widgetHideHabitNames") private var widgetHideHabitNames = true
 
     @State private var showResetConfirm = false
     @State private var showDifficultyEditor = false
@@ -44,6 +45,7 @@ struct SettingsView: View {
                         appearanceSection
                         protocolSection
                         remindersSection
+                        widgetSection
                         dangerSection
                         aboutSection
                         Color.clear.frame(height: 60)
@@ -53,6 +55,7 @@ struct SettingsView: View {
             }
         }
         .onAppear { viewModel.bind(context: context) }
+        .onChange(of: widgetHideHabitNames) { _, _ in WidgetSnapshotService.publish(context: context) }
         .alert("Reset protocol?", isPresented: $showResetConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Reset", role: .destructive) {
@@ -207,6 +210,17 @@ struct SettingsView: View {
                 }
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private var widgetSection: some View {
+        VStack(alignment: .leading, spacing: GlowSpacing.s12) {
+            sectionLabel("HOME SCREEN WIDGETS")
+            Toggle("Hide habit names", isOn: $widgetHideHabitNames)
+                .tint(Color.glowTextPrimary)
+            Text("Touch and hold your Home Screen, choose Edit → Add Widget, then search for Glow Protocol. Choose the small or medium widget.")
+                .font(.footnote)
+                .foregroundStyle(Color.glowTextSecondary)
         }
     }
 

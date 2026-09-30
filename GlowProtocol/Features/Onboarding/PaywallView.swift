@@ -5,6 +5,7 @@ struct SubscriptionAccessView: View {
     var placement = "subscription_access"
     var onAccess: () -> Void = {}
     @State private var subscription = SubscriptionService.shared
+    @State private var showAccount = false
 
     var body: some View {
         VStack(spacing: GlowSpacing.s24) {
@@ -24,6 +25,8 @@ struct SubscriptionAccessView: View {
             if subscription.isBusy { ProgressView() }
             Link("Contact support", destination: AppConfiguration.supportMailURL)
                 .foregroundStyle(Color.glowTextSecondary)
+            Button("Account and invitations") { showAccount = true }
+                .foregroundStyle(Color.glowTextSecondary)
             if let error = subscription.errorMessage {
                 Text(error)
                     .font(.callout)
@@ -34,6 +37,16 @@ struct SubscriptionAccessView: View {
         .padding(GlowSpacing.s24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.glowBackground.ignoresSafeArea())
+        .sheet(isPresented: $showAccount) {
+            NavigationStack {
+                FriendsView(accountOnly: true)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showAccount = false }
+                        }
+                    }
+            }
+        }
     }
 }
 

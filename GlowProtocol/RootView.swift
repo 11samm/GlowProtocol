@@ -78,6 +78,7 @@ struct RootView: View {
     /// before showing the main tab view.
     private func evaluateForeground() {
         guard hasCompletedOnboarding, subscription.hasAccess else { return }
+        WidgetSnapshotService.publish(context: context)
         let service = StreakService(context: context)
         let cfg = service.fetchOrCreateConfig()
         service.rolloverGraceDaysIfNeeded(config: cfg)

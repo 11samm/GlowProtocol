@@ -23,6 +23,15 @@ final class StreakService {
         self.userDefaults = userDefaults
     }
 
+    private func saveChanges() {
+        do {
+            try context.save()
+            WidgetSnapshotService.publish(context: context)
+        } catch {
+            // Leave the in-memory edits intact for retry; do not publish unsaved changes.
+        }
+    }
+
     // MARK: - Config
 
     @discardableResult
@@ -33,7 +42,7 @@ final class StreakService {
         }
         let cfg = ProtocolConfig()
         context.insert(cfg)
-        try? context.save()
+        saveChanges()
         return cfg
     }
 
@@ -150,7 +159,7 @@ final class StreakService {
             context.insert(entry)
         }
         context.insert(log)
-        try? context.save()
+        saveChanges()
         return log
     }
 
@@ -180,7 +189,7 @@ final class StreakService {
                 if !log.graceDayUsed { log.streakHeld = false }
             }
         }
-        try? context.save()
+        saveChanges()
     }
 
     func markHabitComplete(_ entry: HabitEntry, metadata: String? = nil) {
@@ -191,12 +200,12 @@ final class StreakService {
             log.completedAt = .now
             log.streakHeld = true
         }
-        try? context.save()
+        saveChanges()
     }
 
     func attachPhoto(_ relativePath: String, to log: DayLog) {
         log.photoFileURL = relativePath
-        try? context.save()
+        saveChanges()
     }
 
     // MARK: - Midnight evaluation
@@ -212,7 +221,7 @@ final class StreakService {
     /// Used by the dev skip control so day advancement doesn't trigger a fail state.
     func markDayHeld(_ log: DayLog) {
         log.streakHeld = true
-        try? context.save()
+        saveChanges()
     }
 
     /// Evaluates `date`'s DayLog and applies streak/grace/reset logic. Returns the outcome.
@@ -230,14 +239,14 @@ final class StreakService {
 
         if log.allRequiredComplete {
             log.streakHeld = true
-            try? context.save()
+            saveChanges()
             return .streakHeld
         }
 
         // Soft mode: never fail — mark the day as held regardless of completion.
         if config.noPunishment {
             log.streakHeld = true
-            try? context.save()
+            saveChanges()
             return .streakHeld
         }
 
@@ -270,7 +279,7 @@ final class StreakService {
         log.graceDayUsed = true
         log.streakHeld = true
         config.graceUsedThisMonth += 1
-        try? context.save()
+        saveChanges()
         clearPendingDecision()
     }
 
@@ -288,7 +297,7 @@ final class StreakService {
         config.startDate = Date.glowEffectiveNow.glowStartOfDay
         let newRunID = UUID()
         let _ = seedDayLogIfMissing(for: Date.glowEffectiveNow.glowStartOfDay, config: config, runID: newRunID)
-        try? context.save()
+        saveChanges()
         _ = triggerFromEvaluation
     }
 
@@ -336,7 +345,7 @@ final class StreakService {
             log.habitEntries.append(entry)
             context.insert(entry)
         }
-        try? context.save()
+        saveChanges()
     }
 
     func clearPendingDecision() {
@@ -360,7 +369,7 @@ final class StreakService {
             var comps = cal.dateComponents([.year, .month], from: now)
             comps.day = 1
             config.graceResetDate = cal.date(from: comps) ?? now.glowStartOfDay
-            try? context.save()
+            saveChanges()
         }
     }
 

@@ -101,6 +101,7 @@ final class DailyGlowViewModel {
             HapticService.shared.play(.timerFinish)
         }
         WidgetCenter.shared.reloadAllTimelines()
+        publishFriendsSummary()
     }
 
     func undoHabit(_ entry: HabitEntry) {
@@ -108,6 +109,7 @@ final class DailyGlowViewModel {
         if entry.habitID == .water { entry.waterGlasses = 0 }
         service.toggleHabit(entry)
         WidgetCenter.shared.reloadAllTimelines()
+        publishFriendsSummary()
     }
 
     func setWaterGlasses(_ count: Int, for entry: HabitEntry) {
@@ -129,6 +131,11 @@ final class DailyGlowViewModel {
 
     func dismissValidator() {
         pendingValidator = nil
+    }
+
+    private func publishFriendsSummary() {
+        guard let log = todayLog else { return }
+        FriendsService.shared.publish(date: log.date, day: log.dayNumber, fraction: log.completionPercentage)
     }
 
     // MARK: - Display helpers

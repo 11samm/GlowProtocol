@@ -12,7 +12,7 @@ Prioritize data integrity and purchase readiness first. Then shorten onboarding,
 ## Evidence and scope
 
 - Reviewed the current local SwiftUI working tree, including the uncommitted Superwall integration. The public GitHub README describes an earlier paywall state.
-- Reviewed all 78 Her75 screenshots in `/Users/sam/Downloads/Her75App`. Screenshots establish visible UI, not actual usage, conversion, privacy controls, or feature reliability.
+- Reviewed all 78 Her75 screenshots in `Her75App`. Screenshots establish visible UI, not actual usage, conversion, privacy controls, or feature reliability.
 - The live simulator walkthrough is recorded below. Device-only behavior, real purchases, and long-term retention require separate testing.
 
 ## Live app walkthrough

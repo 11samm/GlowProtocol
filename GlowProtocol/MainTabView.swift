@@ -2,7 +2,7 @@
 //  MainTabView.swift
 //  GlowProtocol
 //
-//  Custom floating tab bar over the three primary screens.
+//  Custom floating tab bar over the primary screens.
 //
 
 import SwiftUI
@@ -14,6 +14,7 @@ struct MainTabView: View {
         case daily
         case scrapbook
         case progress
+        case friends
     }
 
     var body: some View {
@@ -55,6 +56,17 @@ struct MainTabView: View {
                     .accessibilityHidden(true)
                 }
         }
+        .onAppear {
+            if FriendsService.shared.pendingInviteCode != nil { selectedTab = .friends }
+            applyRequestedTab()
+        }
+        .onChange(of: FriendsService.shared.requestedHomeTab) { _, _ in applyRequestedTab() }
+    }
+
+    private func applyRequestedTab() {
+        guard let destination = FriendsService.shared.requestedHomeTab else { return }
+        selectedTab = destination == "friends" ? .friends : .daily
+        FriendsService.shared.requestedHomeTab = nil
     }
 
     @ViewBuilder
@@ -63,6 +75,7 @@ struct MainTabView: View {
         case .daily: DailyGlowView()
         case .scrapbook: ScrapbookView()
         case .progress: ProgressDashboardView()
+        case .friends: FriendsView()
         }
     }
 
@@ -71,6 +84,7 @@ struct MainTabView: View {
             tabItem(.daily, icon: "sun.min", selectedIcon: "sun.max.fill", label: "Today")
             tabItem(.scrapbook, icon: "square.grid.2x2", selectedIcon: "square.grid.2x2.fill", label: "Scrapbook")
             tabItem(.progress, icon: "chart.bar", selectedIcon: "chart.bar.fill", label: "Progress")
+            tabItem(.friends, icon: "person.2", selectedIcon: "person.2.fill", label: "Friends")
         }
         .frame(height: 64)
         .background(
@@ -108,5 +122,7 @@ struct MainTabView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

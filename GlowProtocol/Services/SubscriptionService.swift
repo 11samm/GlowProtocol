@@ -25,7 +25,10 @@ final class SubscriptionService {
         status = Superwall.shared.subscriptionStatus
         statusObserver = Superwall.shared.$subscriptionStatus
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] value in self?.status = value }
+            .sink { [weak self] value in
+                self?.status = value
+                WidgetSnapshotService.updateAccess(value.isActive)
+            }
         Superwall.shared.setUserAttributes(["app_cohort": "ios_v1"])
     }
 

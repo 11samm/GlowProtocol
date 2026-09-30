@@ -13,5 +13,6 @@ import SwiftUI
 struct GlowProtocolWidgetBundle: WidgetBundle {
     var body: some Widget {
         GlowTimerLiveActivity()
+        GlowDailyProgressWidget()
     }
 }

@@ -1,0 +1,6 @@
+project_id = "glowprotocol"
+
+[functions.delete-account]
+# The function verifies the bearer session with Auth.getUser. The legacy gateway
+# only accepts legacy-secret JWTs, so it is disabled for current signing keys.
+verify_jwt = false
