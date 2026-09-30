@@ -62,7 +62,7 @@ struct SettingsView: View {
                 dismiss()
             }
         } message: {
-            Text("This clears all progress and lets you reconfigure your difficulty and habits from the start.")
+            Text("This archives your current run and lets you choose your difficulty and habits again. Earlier progress and photos are kept.")
         }
         .sheet(isPresented: $showDifficultyEditor) {
             EditDifficultySheet(viewModel: viewModel)
@@ -184,7 +184,7 @@ struct SettingsView: View {
                 Text("Midnight check")
                     .glowText(.body)
                     .foregroundStyle(Color.glowTextPrimary)
-                Text("Streak evaluates at 11:59 PM daily.")
+                Text("Previous days are checked when you open the app.")
                     .glowText(.caption)
                     .foregroundStyle(Color.glowTextSecondary)
             }
@@ -213,6 +213,9 @@ struct SettingsView: View {
     private var aboutSection: some View {
         VStack(alignment: .leading, spacing: GlowSpacing.s12) {
             sectionLabel("ABOUT")
+            Link("Contact support", destination: AppConfiguration.supportMailURL)
+                .glowText(.body)
+                .foregroundStyle(Color.glowTextPrimary)
             HStack {
                 Text("Version")
                     .glowText(.body)
@@ -643,9 +646,9 @@ struct PrivacyPolicyView: View {
                     .foregroundStyle(Color.glowTextPrimary)
                 ScrollView {
                     VStack(alignment: .leading, spacing: GlowSpacing.s12) {
-                        Text("Your data stays on your device.")
+                        Text("Your habits and photos")
                             .glowText(.headline)
-                        Text("Glow Protocol stores all of your habit data, photos, and progress locally on your device using Apple's SwiftData framework. We do not have a backend in Phase 1. Photos are written to your app sandbox and are never uploaded.")
+                        Text("Habit logs, progress photos, and your routine are stored locally on your device. Photos are not uploaded. Deleting the app can remove this local data.")
                             .glowText(.body)
                             .foregroundStyle(Color.glowTextSecondary)
                         Text("Notifications")
@@ -653,9 +656,14 @@ struct PrivacyPolicyView: View {
                         Text("We use local notifications scheduled by your device to remind you about the daily check-in and the nightly streak evaluation. No notification content is sent over the network.")
                             .glowText(.body)
                             .foregroundStyle(Color.glowTextSecondary)
+                        Text("Subscriptions")
+                            .glowText(.headline)
+                        Text("Apple processes purchases. Superwall provides our paywall and processes subscription status and paywall interaction information. Account and Friends functionality uses Supabase when available; daily completion sharing requires your permission.")
+                            .glowText(.body)
+                            .foregroundStyle(Color.glowTextSecondary)
                         Text("Contact")
                             .glowText(.headline)
-                        Text("Questions? Email support@glowprotocol.app.")
+                        Link(AppConfiguration.supportEmail, destination: AppConfiguration.supportMailURL)
                             .glowText(.body)
                             .foregroundStyle(Color.glowTextSecondary)
                     }

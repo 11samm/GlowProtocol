@@ -29,6 +29,26 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "22E2C3262FC52E9E00653F27"
+               BuildableName = "GlowProtocolTests.xctest"
+               BlueprintName = "GlowProtocolTests"
+               ReferencedContainer = "container:GlowProtocol.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "22E2C3302FC52E9E00653F27"
+               BuildableName = "GlowProtocolUITests.xctest"
+               BlueprintName = "GlowProtocolUITests"
+               ReferencedContainer = "container:GlowProtocol.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

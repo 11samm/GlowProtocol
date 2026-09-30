@@ -9,6 +9,7 @@
 import Testing
 import SwiftData
 import Foundation
+import UIKit
 @testable import GlowProtocol
 
 @MainActor
@@ -96,7 +97,9 @@ struct StreakServiceTests {
         #expect(defaults.bool(forKey: StreakService.pendingGraceDecisionKey))
         #expect(defaults.bool(forKey: StreakService.pendingGraceAvailableKey) == false)
 
-        // Archived current run is now isCurrentRun=false; a fresh current day exists.
+        // The decision is queued; history changes only when the user begins again.
+        #expect(service.fetchAllArchivedLogs().isEmpty)
+        service.performHardReset()
         let current = service.fetchAllCurrentRunLogs()
         let archived = service.fetchAllArchivedLogs()
         #expect(current.count == 1)
@@ -125,5 +128,86 @@ struct StreakServiceTests {
         #expect(archived.contains(where: { $0.runID == originalRunID }))
         #expect(current.count == 1)
         #expect(current.first?.runID != originalRunID)
+    }
+
+    @Test func reconfigurationPreservesEarlierLogsAndPhotos() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let service = StreakService(context: context)
+        let original = service.currentDayLog()
+        let photo = ScrapbookPhoto(
+            date: original.date,
+            dayNumber: 1,
+            fileURL: "legacy-photo.jpg",
+            thumbnailData: nil,
+            capturedAt: .now,
+            runID: original.runID
+        )
+        context.insert(photo)
+        try context.save()
+
+        OnboardingViewModel().finalize(in: context)
+
+        let current = service.fetchAllCurrentRunLogs()
+        let archived = service.fetchAllArchivedLogs()
+        #expect(archived.contains(where: { $0.runID == original.runID }))
+        #expect(current.count == 1)
+        #expect(current.first?.runID != original.runID)
+        #expect(photo.isCurrentRun == false)
+        #expect(photo.fileURL == "legacy-photo.jpg")
+    }
+
+    @Test func partialWaterProgressSurvivesANewContext() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let water = HabitEntry(habitID: .water)
+        context.insert(water)
+        water.waterGlasses = 3
+        try context.save()
+        let reopened = ModelContext(container)
+        let entries = try reopened.fetch(FetchDescriptor<HabitEntry>())
+        #expect(entries.first?.waterGlasses == 3)
+        #expect(entries.first?.isComplete == false)
+    }
+
+    @Test func graceAppliesToTheFailedDateInsteadOfToday() throws {
+        let (service, _) = try makeService()
+        let config = service.fetchOrCreateConfig()
+        config.graceDaysPerMonth = 2
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date.now)!
+        config.startDate = yesterday
+        _ = service.seedDayLog(for: yesterday, config: config)
+        _ = service.currentDayLog()
+        _ = service.evaluateDay(yesterday)
+        service.useGraceDay()
+        #expect(service.fetchDayLog(on: yesterday)?.graceDayUsed == true)
+        #expect(service.fetchDayLog(on: .now)?.graceDayUsed == false)
+    }
+
+    @Test func sameDatePhotosInDifferentRunsKeepSeparateFiles() throws {
+        let container = try makeInMemoryContainer()
+        let context = ModelContext(container)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { renderer in
+            UIColor.red.setFill()
+            renderer.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
+        }
+        let firstRun = UUID()
+        let secondRun = UUID()
+        let first = try PhotoService.shared.savePhoto(
+            image, for: .now, dayNumber: 1, runID: firstRun, in: context
+        )
+        let second = try PhotoService.shared.savePhoto(
+            image, for: .now, dayNumber: 1, runID: secondRun, in: context
+        )
+        defer {
+            PhotoService.shared.deletePhoto(first.fileURL)
+            PhotoService.shared.deletePhoto(second.fileURL)
+        }
+
+        #expect(first.fileURL != second.fileURL)
+        #expect(first.runID == firstRun)
+        #expect(second.runID == secondRun)
+        #expect(PhotoService.shared.loadImage(for: first.fileURL) != nil)
+        #expect(PhotoService.shared.loadImage(for: second.fileURL) != nil)
     }
 }

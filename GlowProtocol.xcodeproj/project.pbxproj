@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		22E95F3A2FE2ADA8000DE958 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = 22E95F392FE2ADA8000DE958 /* SuperwallKit */; };
 		BB000D2FC52E9B00653F27 /* GlowProtocolWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BB00012FC52E9B00653F27 /* GlowProtocolWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -106,6 +107,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22E95F3A2FE2ADA8000DE958 /* SuperwallKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,6 +179,7 @@
 			);
 			name = GlowProtocol;
 			packageProductDependencies = (
+				22E95F392FE2ADA8000DE958 /* SuperwallKit */,
 			);
 			productName = GlowProtocol;
 			productReference = 22E2C3172FC52E9B00653F27 /* GlowProtocol.app */;
@@ -285,6 +288,9 @@
 			);
 			mainGroup = 22E2C30E2FC52E9B00653F27;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				22E95F382FE2ADA8000DE958 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 22E2C3182FC52E9B00653F27 /* Products */;
 			projectDirPath = "";
@@ -757,6 +763,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		22E95F382FE2ADA8000DE958 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/superwall/Superwall-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		22E95F392FE2ADA8000DE958 /* SuperwallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 22E95F382FE2ADA8000DE958 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
+			productName = SuperwallKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 22E2C30F2FC52E9B00653F27 /* Project object */;
 }

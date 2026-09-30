@@ -3,7 +3,7 @@
 //  GlowProtocol
 //
 //  Filesystem-backed photo storage. Scrapbook photos live under
-//  Documents/Scrapbook/<yyyy-MM-dd>.jpg as JPEGs (quality 0.82).
+//  Scrapbook/<run-id>/<yyyy-MM-dd>.jpg as JPEGs (quality 0.82).
 //
 
 import Foundation
@@ -57,8 +57,11 @@ final class PhotoService {
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "yyyy-MM-dd"
         let stamp = f.string(from: date.glowStartOfDay)
-        let filename = "\(stamp).jpg"
+        let filename = "\(runID.uuidString)/\(stamp).jpg"
         let fileURL = try absoluteURL(forRelative: filename)
+        try FileManager.default.createDirectory(
+            at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+        )
 
         guard let data = image.jpegData(compressionQuality: 0.82) else {
             throw NSError(domain: "PhotoService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Could not encode image"])
@@ -70,11 +73,10 @@ final class PhotoService {
 
         let descriptor = FetchDescriptor<ScrapbookPhoto>()
         let existing = (try? context.fetch(descriptor))?.first(where: {
-            Calendar.current.isDate($0.date, inSameDayAs: date)
+            $0.runID == runID && Calendar.current.isDate($0.date, inSameDayAs: date)
         })
 
         if let existing {
-            let previousRunID = existing.runID
             existing.date = date.glowStartOfDay
             existing.dayNumber = dayNumber
             existing.fileURL = filename
@@ -82,10 +84,10 @@ final class PhotoService {
             existing.capturedAt = .now
             existing.runID = runID
             existing.isCurrentRun = true
-            try? context.save()
+            try context.save()
             GlowDebugLog.photoService(
                 "updated existing photo date=\(date.glowShortDayLabel) day=\(dayNumber) file=\(filename) " +
-                "runID \(previousRunID.uuidString.prefix(8))…->\(runID.uuidString.prefix(8))…"
+                "runID=\(runID.uuidString.prefix(8))…"
             )
             return existing
         }
@@ -100,7 +102,7 @@ final class PhotoService {
             isCurrentRun: true
         )
         context.insert(photo)
-        try? context.save()
+        try context.save()
         GlowDebugLog.photoService(
             "inserted photo date=\(date.glowShortDayLabel) day=\(dayNumber) file=\(filename) " +
             "runID=\(runID.uuidString.prefix(8))…"

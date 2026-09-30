@@ -2,7 +2,7 @@
 //  WaterTrackerView.swift
 //  GlowProtocol
 //
-//  A tactile 8-band bottle that fills as the user taps. Auto-completes the habit.
+//  Tap to add one glass; hold a band to set its level. Auto-completes the habit.
 //
 
 import SwiftUI
@@ -13,11 +13,11 @@ struct WaterTrackerView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var taps: Int {
-        get { viewModel.waterTaps[entry.persistentModelID.idString] ?? 0 }
+        get { entry.waterGlasses }
     }
 
     private func setTaps(_ value: Int) {
-        viewModel.waterTaps[entry.persistentModelID.idString] = value
+        viewModel.setWaterGlasses(value, for: entry)
     }
 
     var body: some View {
@@ -28,9 +28,10 @@ struct WaterTrackerView: View {
                 Text("Water intake")
                     .glowText(.headline)
                     .foregroundStyle(Color.glowTextPrimary)
-                Text("Tap a glass to log it")
+                Text("Tap to add 1 glass · Hold to set the level")
                     .glowText(.caption)
                     .foregroundStyle(Color.glowTextSecondary)
+                    .multilineTextAlignment(.center)
                     .padding(.bottom, GlowSpacing.s16)
 
                 bottle
@@ -85,14 +86,34 @@ struct WaterTrackerView: View {
             .fill(filled ? Color.habitWater : Color.glowSurfaceSecondary)
             .frame(height: height)
             .contentShape(Rectangle())
-            .onTapGesture {
-                let newTaps = index + 1
-                if newTaps != taps {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        setTaps(newTaps)
+            .gesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .exclusively(before: TapGesture())
+                    .onEnded { gesture in
+                        switch gesture {
+                        case .first:
+                            logWater(index + 1)
+                        case .second:
+                            logWater(min(taps + 1, 8))
+                        }
                     }
-                    HapticService.shared.play(.waterTap)
-                }
+            )
+            .accessibilityLabel("Water level: \(index + 1) glasses")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("Activate to add one glass.")
+            .accessibilityAction {
+                logWater(min(taps + 1, 8))
             }
+            .accessibilityAction(named: Text("Set to \(index + 1) glasses")) {
+                logWater(index + 1)
+            }
+    }
+
+    private func logWater(_ value: Int) {
+        guard value != taps else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            setTaps(value)
+        }
+        HapticService.shared.play(.waterTap)
     }
 }

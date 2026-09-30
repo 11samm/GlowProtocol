@@ -20,9 +20,40 @@ struct MainTabView: View {
         ZStack(alignment: .bottom) {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             tabBar
                 .padding(.horizontal, GlowSpacing.s24)
                 .padding(.bottom, 12)
+                .frame(maxWidth: .infinity)
+                .background {
+                    ZStack {
+                        Rectangle()
+                            .fill(.regularMaterial)
+                            .mask {
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .clear, location: 0),
+                                        .init(color: .black.opacity(0.65), location: 0.35),
+                                        .init(color: .black, location: 0.65),
+                                        .init(color: .black, location: 1)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            }
+                            .padding(.top, -72)
+                            .ignoresSafeArea(.container, edges: .bottom)
+                            .allowsHitTesting(false)
+
+                        // Keep the tap shield independent of the visual fade:
+                        // even the transparent margins must absorb touches.
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {}
+                            .ignoresSafeArea(.container, edges: .bottom)
+                    }
+                    .accessibilityHidden(true)
+                }
         }
     }
 
@@ -73,7 +104,8 @@ struct MainTabView: View {
                     Spacer().frame(height: 12)
                 }
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

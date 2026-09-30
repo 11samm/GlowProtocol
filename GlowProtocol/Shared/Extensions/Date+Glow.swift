@@ -8,12 +8,9 @@
 import Foundation
 
 extension Date {
-    /// Returns the current date shifted forward by `debugDayOffset` days.
-    /// Used throughout day-logic so the dev controls panel can simulate day advances.
+    /// The current date used by day-based app logic.
     static var glowEffectiveNow: Date {
-        let offset = UserDefaults.standard.integer(forKey: "debugDayOffset")
-        guard offset != 0 else { return .now }
-        return Calendar.current.date(byAdding: .day, value: offset, to: .now) ?? .now
+        .now
     }
 
     var glowStartOfDay: Date {

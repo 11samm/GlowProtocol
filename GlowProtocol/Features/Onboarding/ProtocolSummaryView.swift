@@ -50,7 +50,16 @@ struct ProtocolSummaryView: View {
 
                 GlowButton(title: "Make it official  →", action: onContinue)
                     .padding(.horizontal, GlowSpacing.s16)
-                    .padding(.bottom, GlowSpacing.s24)
+                    .disabled(SubscriptionService.shared.isBusy)
+                Button("Restore purchases") {
+                    Task {
+                        await SubscriptionService.shared.restore {
+                            viewModel.step = .notifications
+                        }
+                    }
+                }
+                .disabled(SubscriptionService.shared.isBusy)
+                .padding(.bottom, GlowSpacing.s24)
             }
         }
     }

@@ -34,15 +34,9 @@ final class BackgroundTaskService {
     func scheduleMidnightCheck() {
         let request = BGAppRefreshTaskRequest(identifier: Self.midnightCheckIdentifier)
         let calendar = Calendar.current
-        var components = calendar.dateComponents([.year, .month, .day], from: .now)
-        components.hour = 23
-        components.minute = 59
-        components.second = 50
-        if let date = calendar.date(from: components), date > .now {
-            request.earliestBeginDate = date
-        } else {
-            request.earliestBeginDate = Date.now.addingTimeInterval(60 * 60)
-        }
+        request.earliestBeginDate = calendar.date(
+            byAdding: .day, value: 1, to: calendar.startOfDay(for: .now)
+        )
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
@@ -59,7 +53,12 @@ final class BackgroundTaskService {
         let workTask = Task { @MainActor in
             let context = ModelContext(container)
             let service = StreakService(context: context)
-            _ = service.evaluateDay()
+            // Background scheduling is best effort. Only evaluate a closed day.
+            let today = Date.now.glowStartOfDay
+            if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today),
+               yesterday >= service.fetchOrCreateConfig().startDate.glowStartOfDay {
+                _ = service.evaluateDay(yesterday)
+            }
             if UserDefaults.standard.bool(forKey: StreakService.pendingGraceDecisionKey),
                UserDefaults.standard.bool(forKey: StreakService.pendingGraceAvailableKey) {
                 await NotificationService.shared.postGraceAvailableNotification()

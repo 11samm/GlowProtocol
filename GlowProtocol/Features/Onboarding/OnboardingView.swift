@@ -12,6 +12,7 @@
 
 import SwiftUI
 import SwiftData
+import SuperwallKit
 
 struct OnboardingView: View {
     @State private var viewModel = OnboardingViewModel()
@@ -103,16 +104,14 @@ struct OnboardingView: View {
                 ProtocolSummaryView(
                     viewModel: viewModel,
                     onBack: { viewModel.step = viewModel.shouldShowGraceStep ? .grace : .habits },
-                    onContinue: { viewModel.nextStep() }
+                    onContinue: { registerPaywall() }
                 )
                 .transition(.opacity)
 
+            // .paywall is bypassed — Superwall presents its paywall from .summary.
+            // This case is a safe fallback in case any navigation path lands here.
             case .paywall:
-                PaywallView(
-                    viewModel: viewModel,
-                    onContinue: { viewModel.nextStep() }
-                )
-                .transition(.opacity)
+                PaywallView(viewModel: viewModel) { viewModel.step = .notifications }
 
             case .notifications:
                 NotificationPermissionView(onFinish: { finish() })
@@ -120,6 +119,14 @@ struct OnboardingView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: viewModel.step)
+        .alert("Subscription unavailable", isPresented: Binding(
+            get: { SubscriptionService.shared.errorMessage != nil },
+            set: { if !$0 { SubscriptionService.shared.errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { SubscriptionService.shared.errorMessage = nil }
+        } message: {
+            Text(SubscriptionService.shared.errorMessage ?? "Please try again.")
+        }
         .onAppear {
             // Restore the saved name so personalization works even when the
             // welcome/personalization steps are skipped (e.g. reconfigure).
@@ -133,7 +140,25 @@ struct OnboardingView: View {
         }
     }
 
+    /// Triggers the Superwall placement. Superwall checks subscription status:
+    /// - Already subscribed → closure runs immediately, advancing the flow.
+    /// - Not subscribed → Superwall presents its paywall; closure runs on purchase.
+    /// - Dismissed without purchase → nothing happens; user stays on the summary.
+    private func registerPaywall() {
+        SubscriptionService.shared.setOnboardingAttributes(
+            preset: (viewModel.preset ?? .hard).rawValue,
+            habitCount: viewModel.enabledCount
+        )
+        SubscriptionService.shared.requestAccess(placement: "onboarding_complete") {
+            viewModel.step = .notifications
+        }
+    }
+
     private func finish() {
+        guard SubscriptionService.shared.hasAccess else {
+            viewModel.step = .summary
+            return
+        }
         viewModel.finalize(in: modelContext)
         hasCompletedOnboarding = true
         Task { await NotificationService.shared.scheduleMidnightCheck() }

@@ -7,20 +7,16 @@
 
 import SwiftUI
 import SwiftData
+import SuperwallKit
 
 @main
 struct GlowProtocolApp: App {
     @AppStorage("appearancePreference") private var appearancePreference: String = "light"
 
-    /// Set to true by the container initializer when it has to destroy an
-    /// unmigrateable store — `init()` then resets onboarding so the user
-    /// re-configures rather than entering a broken state.
-    private static var storeWasDestroyedForMigration = false
-
     /// Shared container — uses the App Group container when available so the
     /// widget extension can read the same store; otherwise falls back to the
     /// app's own Documents directory.
-    let sharedModelContainer: ModelContainer = {
+    let sharedModelContainer: ModelContainer? = {
         let schema = Schema([
             ProtocolConfig.self,
             DayLog.self,
@@ -40,46 +36,34 @@ struct GlowProtocolApp: App {
             return (docs ?? URL.documentsDirectory).appendingPathComponent("GlowProtocol.store")
         }()
         let config = ModelConfiguration(schema: schema, url: storeURL)
-        do {
-            return try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            // Migration failed (e.g. new non-optional columns added to schema).
-            // Destroy the stale SQLite triple and recreate from scratch.
-            // The user will be sent back through onboarding in init().
-            let companions = [storeURL,
-                              storeURL.appendingPathExtension("shm"),
-                              storeURL.appendingPathExtension("wal")]
-            companions.forEach { try? FileManager.default.removeItem(at: $0) }
-            GlowProtocolApp.storeWasDestroyedForMigration = true
-
-            // Retry with the now-empty location.
-            if let fresh = try? ModelContainer(for: schema, configurations: [config]) {
-                return fresh
-            }
-            // Absolute last resort — in-memory so the app at least renders.
-            return try! ModelContainer(
-                for: schema,
-                configurations: [ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)]
-            )
-        }
+        // Keep the original store intact if opening or migrating it fails.
+        return try? ModelContainer(for: schema, configurations: [config])
     }()
 
     init() {
-        if GlowProtocolApp.storeWasDestroyedForMigration {
-            // Store was wiped — force the user back through onboarding so they
-            // reconfigure their difficulty and habits from a clean slate.
-            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-            UserDefaults.standard.set(true, forKey: "onboardingSkipsWelcome")
+        SubscriptionService.shared.configure()
+        if let sharedModelContainer {
+            BackgroundTaskService.shared.register(container: sharedModelContainer)
         }
-        BackgroundTaskService.shared.register(container: sharedModelContainer)
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .preferredColorScheme(colorScheme(for: appearancePreference))
+            if let sharedModelContainer {
+                RootView()
+                    .modelContainer(sharedModelContainer)
+                    .preferredColorScheme(colorScheme(for: appearancePreference))
+                    .onOpenURL { url in
+                        Superwall.handleDeepLink(url)
+                    }
+            } else {
+                ContentUnavailableView(
+                    "Progress couldn't be opened",
+                    systemImage: "externaldrive.badge.exclamationmark",
+                    description: Text("Your saved progress has been preserved. Please contact support before reinstalling or deleting the app.")
+                )
+            }
         }
-        .modelContainer(sharedModelContainer)
     }
 
     private func colorScheme(for preference: String) -> ColorScheme? {

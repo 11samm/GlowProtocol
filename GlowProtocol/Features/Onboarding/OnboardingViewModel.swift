@@ -257,10 +257,18 @@ final class OnboardingViewModel {
         config.graceResetDate = Date.now.glowStartOfDay
         config.startDate = Date.now
 
-        // Wipe existing day logs (rare — but onboarding implies a fresh start).
-        let descriptor = FetchDescriptor<DayLog>()
-        if let existing = try? context.fetch(descriptor) {
-            for log in existing { context.delete(log) }
+        // A new protocol starts a new run. Preserve all earlier logs and photos.
+        let activeLogs = FetchDescriptor<DayLog>(
+            predicate: #Predicate<DayLog> { $0.isCurrentRun == true }
+        )
+        if let existing = try? context.fetch(activeLogs) {
+            for log in existing { log.isCurrentRun = false }
+        }
+        let activePhotos = FetchDescriptor<ScrapbookPhoto>(
+            predicate: #Predicate<ScrapbookPhoto> { $0.isCurrentRun == true }
+        )
+        if let existing = try? context.fetch(activePhotos) {
+            for photo in existing { photo.isCurrentRun = false }
         }
         try? context.save()
 

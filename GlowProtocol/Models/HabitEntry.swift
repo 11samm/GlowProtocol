@@ -141,6 +141,22 @@ final class HabitEntry {
         set { habitIDRaw = newValue.rawValue }
     }
 
+    /// Uses the existing metadata column so partial water progress survives relaunch
+    /// without changing the stored schema. Older completed entries may have no metadata.
+    var waterGlasses: Int {
+        get {
+            guard let metadata = validationMetadata,
+                  let data = metadata.data(using: .utf8),
+                  let values = try? JSONDecoder().decode([String: Int].self, from: data),
+                  let count = values["tapsCompleted"] else { return isComplete ? 8 : 0 }
+            return min(max(count, 0), 8)
+        }
+        set {
+            let count = min(max(newValue, 0), 8)
+            validationMetadata = "{\"tapsCompleted\":\(count)}"
+        }
+    }
+
     /// Display label — prefers the user's custom label, falls back to the default for the habit.
     var displayLabel: String {
         if let custom = customLabel, !custom.isEmpty { return custom }

@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct RootView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
@@ -15,6 +16,7 @@ struct RootView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
 
+    @State private var subscription = SubscriptionService.shared
     @State private var didFinishLaunch = false
     @State private var failStateShown = false
 
@@ -24,8 +26,12 @@ struct RootView: View {
             if didFinishLaunch {
                 Group {
                     if hasCompletedOnboarding {
-                        MainTabView()
-                            .transition(.opacity)
+                        if subscription.hasAccess {
+                            MainTabView()
+                                .transition(.opacity)
+                        } else {
+                            SubscriptionAccessView()
+                        }
                     } else {
                         OnboardingView()
                             .transition(.opacity)
@@ -45,12 +51,19 @@ struct RootView: View {
             }
         }
         .fullScreenCover(isPresented: $failStateShown, onDismiss: {
-            pendingGraceDecision = false
+            if subscription.hasAccess { pendingGraceDecision = false }
         }) {
             FailStateView()
         }
+        .onChange(of: subscription.hasAccess) { _, hasAccess in
+            if hasAccess {
+                evaluateForeground()
+            } else {
+                failStateShown = false
+            }
+        }
         .onChange(of: pendingGraceDecision) { _, newValue in
-            if newValue, hasCompletedOnboarding { failStateShown = true }
+            if newValue, hasCompletedOnboarding, subscription.hasAccess { failStateShown = true }
         }
     }
 
@@ -64,7 +77,7 @@ struct RootView: View {
     /// was backgrounded across midnight, we evaluate the (now-yesterday) day
     /// before showing the main tab view.
     private func evaluateForeground() {
-        guard hasCompletedOnboarding else { return }
+        guard hasCompletedOnboarding, subscription.hasAccess else { return }
         let service = StreakService(context: context)
         let cfg = service.fetchOrCreateConfig()
         service.rolloverGraceDaysIfNeeded(config: cfg)

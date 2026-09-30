@@ -1,0 +1,10 @@
+.DS_Store
+DerivedData/
+build/
+*.xcresult
+*.xcuserstate
+xcuserdata/
+.env
+.env.*
+*.p8
+supabase/.temp/

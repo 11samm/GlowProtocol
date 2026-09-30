@@ -177,6 +177,7 @@ final class StreakService {
                 log.streakHeld = true
             } else {
                 log.completedAt = nil
+                if !log.graceDayUsed { log.streakHeld = false }
             }
         }
         try? context.save()
@@ -243,7 +244,7 @@ final class StreakService {
         if config.graceUsedThisMonth < config.graceDaysPerMonth {
             userDefaults.set(true, forKey: Self.pendingGraceDecisionKey)
             userDefaults.set(true, forKey: Self.pendingGraceAvailableKey)
-            userDefaults.set(Date.glowEffectiveNow.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
+            userDefaults.set(targetDate.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
             return .graceAvailable
         }
 
@@ -251,7 +252,7 @@ final class StreakService {
         // This prevents silent auto-resets when the user misses multiple days.
         userDefaults.set(true, forKey: Self.pendingGraceDecisionKey)
         userDefaults.set(false, forKey: Self.pendingGraceAvailableKey)
-        userDefaults.set(Date.glowEffectiveNow.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
+        userDefaults.set(targetDate.timeIntervalSince1970, forKey: Self.pendingFailDateKey)
         return .hardReset
     }
 

@@ -22,7 +22,6 @@ final class DailyGlowViewModel {
     private var streakService: StreakService?
 
     // Per-habit transient validator state
-    var waterTaps: [String: Int] = [:]
     var readingPages: [String: Int] = [:]
 
     func bind(context: ModelContext) {
@@ -106,8 +105,14 @@ final class DailyGlowViewModel {
 
     func undoHabit(_ entry: HabitEntry) {
         guard let service = streakService else { return }
+        if entry.habitID == .water { entry.waterGlasses = 0 }
         service.toggleHabit(entry)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    func setWaterGlasses(_ count: Int, for entry: HabitEntry) {
+        entry.waterGlasses = count
+        try? modelContext?.save()
     }
 
     func attachPhoto(_ relativePath: String, for log: DayLog) {
@@ -139,7 +144,7 @@ final class DailyGlowViewModel {
         case .workout1, .workout2:
             return ("Tap to start \(config?.workoutMinutes ?? 45)-min timer", .disabled)
         case .water:
-            let taps = waterTaps[entry.persistentModelID.idString] ?? 0
+            let taps = entry.waterGlasses
             return ("\(taps) / 8 glasses", .disabled)
         case .progressPhoto:
             return ("Tap to capture", .disabled)
@@ -155,7 +160,7 @@ final class DailyGlowViewModel {
     func trailingStyle(for entry: HabitEntry) -> HabitRow.TrailingStyle {
         switch entry.habitID {
         case .water where !entry.isComplete:
-            let taps = waterTaps[entry.persistentModelID.idString] ?? 0
+            let taps = entry.waterGlasses
             return .segmented(filled: taps, total: 8)
         default:
             return .check

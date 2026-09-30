@@ -4,7 +4,7 @@
 //
 //  Schedules + cancels local notifications:
 //   • Daily reminder (user-configurable time)
-//   • Nightly streak evaluation (23:59:50)
+//   • Reminder to review the previous day (after midnight)
 //
 
 import Foundation
@@ -59,13 +59,12 @@ final class NotificationService {
 
         let content = UNMutableNotificationContent()
         content.title = "Day check."
-        content.body = "Glow Protocol is evaluating today's habits."
+        content.body = "Open Glow Protocol to review yesterday's progress."
         content.sound = nil
 
         var components = DateComponents()
-        components.hour = 23
-        components.minute = 59
-        components.second = 50
+        components.hour = 0
+        components.minute = 1
 
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
         let request = UNNotificationRequest(identifier: Self.midnightCheckID, content: content, trigger: trigger)
